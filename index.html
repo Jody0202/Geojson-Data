@@ -7,15 +7,21 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
+            font-family: Arial, sans-serif;
         }
-
         #map {
-            height: calc(100vh - 50px); /* Map height adjusted for postcode entry */
+            height: calc(100vh - 50px); /* Adjust map height */
         }
-
+        #top-bar {
+            background-color: white;
+            padding: 10px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000; /* Ensure it stays on top */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional shadow for effect */
+        }
         #legend {
             background: white;
             line-height: 1.8;
@@ -28,30 +34,13 @@
             left: 10px;
             z-index: 1000; /* Ensure it stays on top */
         }
-
-        #postcode-container {
-            position: absolute;
-            top: 10px; /* Positioning at the top left */
-            left: 10px;
-            z-index: 1000;
-            background-color: white; /* White background for postcode entry */
-            padding: 5px;
-            border-radius: 5px;
-        }
-
-        input {
-            margin: 0;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            width: 100%; /* Full width input with padding */
-        }
     </style>
 </head>
 <body>
 
-    <div id="postcode-container">
-        <input type="text" id="postcode" placeholder="Enter postcode" />
+    <div id="top-bar">
+        <input type="text" id="postcode" placeholder="Enter postcode..." />
+        <button onclick="searchPostcode()">Search</button>
     </div>
     <div id="map"></div>
     <div id="legend"></div>
@@ -110,14 +99,6 @@
                 console.error('Error fetching postcode:', error);
             }
         }
-
-        // Add event listener for the postcode search
-        document.getElementById('postcode').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                searchPostcode();
-            }
-        });
     </script>
-
 </body>
 </html>
