@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Map</title>
+    <title>Planning Area Restrictions</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
@@ -27,11 +27,16 @@
             z-index: 1000; /* Ensure it stays on top */
             font-size: 12px; /* Smaller font size */
         }
+
+        h1 {
+            font-size: 16px; /* Reduced title font size */
+            margin-bottom: 10px; /* Add space below the title */
+        }
     </style>
 </head>
 <body>
 
-    <h1>My Interactive Map</h1>
+    <h1>Planning Area Restrictions</h1> <!-- Updated title -->
     <input type="text" id="postcode" placeholder="Enter postcode" />
     <button onclick="searchPostcode()">Search</button>
     <div id="map"></div> <!-- This is where the map will be displayed -->
@@ -96,3 +101,4 @@
     </script>
 </body>
 </html>
+
