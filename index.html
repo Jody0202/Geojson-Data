@@ -36,21 +36,13 @@
             bottom: 10px;
             left: 10px;
         }
-        .zoom-button {
-            background-color: white;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            padding: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-right: 5px;
-        }
-        .zoom-button:hover {
-            background-color: #f0f0f0;
-        }
         .legend-title {
             font-weight: bold;
-            font-size: 12px; /* Reduced font size */
+            font-size: 12px; /* Reduced font size for the title */
+        }
+        .legend-item {
+            font-size: 12px; /* Set font size to match the legend title */
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -59,10 +51,6 @@
 <div id="search-container">
     <input type="text" id="postcode" placeholder="Enter postcode" />
     <button onclick="searchPostcode()">Search</button>
-    <div>
-        <button class="zoom-button" onclick="mainMap.zoomIn()">+</button>
-        <button class="zoom-button" onclick="mainMap.zoomOut()">-</button>
-    </div>
 </div>
 
 <div id="map"></div>
@@ -94,6 +82,7 @@
 
                 // Update legend
                 const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item'; // Add class for legend items
                 legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
                 document.getElementById('legend').appendChild(legendItem);
             })
