@@ -72,8 +72,8 @@
         loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
         loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
         
-        // Replace this with the correct URL for your conservation area GeoJSON file
-        loadGeoJSON('https://drive.google.com/uc?export=download&id=1TPxpqX9FQRFIWBkhwvYbV1sGA4LQnn47', 'orange', 'Conservation Area');
+        // New Conservation Area layer from the provided API link
+        loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'purple', 'Conservation Area');
 
         // Search function to center the map on postcode
         async function searchPostcode() {
