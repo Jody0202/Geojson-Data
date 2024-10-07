@@ -13,8 +13,7 @@
         }
 
         #map {
-            height: calc(100vh - 100px); /* Map height adjusted for title and legend */
-            margin-top: 10px;
+            height: calc(100vh - 150px); /* Map height adjusted for title, postcode entry, and legend */
         }
 
         #legend {
@@ -32,53 +31,40 @@
 
         #title {
             font-size: 20px; /* Adjust title font size as needed */
-            text-align: center;
+            text-align: left;
             background-color: white; /* White background for title */
             padding: 10px;
             border-radius: 5px;
-            position: relative;
+            position: absolute; /* Position at the top left */
+            top: 10px;
+            left: 10px;
             z-index: 1000;
-            margin: 10px;
         }
 
-        .zoom-buttons {
-            position: relative;
+        #postcode-container {
+            position: absolute;
+            top: 50px; /* Positioning under the title */
+            left: 10px;
             z-index: 1000;
-            text-align: center;
-            margin: 10px;
-        }
-
-        .zoom-button {
-            border: 2px solid #ccc;
-            background-color: white;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: 20px;
-            margin: 5px;
+            background-color: white; /* White background for postcode entry */
+            padding: 5px;
             border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        .zoom-button:hover {
-            background-color: #f0f0f0;
         }
 
         input {
-            margin: 10px;
+            margin: 0;
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            width: calc(100% - 22px); /* Full width input with padding */
+            width: 100%; /* Full width input with padding */
         }
     </style>
 </head>
 <body>
 
     <div id="title">Planning Area Restrictions</div>
-    <input type="text" id="postcode" placeholder="Enter postcode" />
-    <div class="zoom-buttons">
-        <button class="zoom-button" id="zoom-in">+</button>
-        <button class="zoom-button" id="zoom-out">-</button>
+    <div id="postcode-container">
+        <input type="text" id="postcode" placeholder="Enter postcode" />
     </div>
     <div id="map"></div>
     <div id="legend"></div>
@@ -118,15 +104,6 @@
         loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
         loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
         loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
-
-        // Zoom functionality
-        document.getElementById('zoom-in').addEventListener('click', () => {
-            mainMap.zoomIn();
-        });
-
-        document.getElementById('zoom-out').addEventListener('click', () => {
-            mainMap.zoomOut();
-        });
 
         // Search function to center the map on postcode
         async function searchPostcode() {
