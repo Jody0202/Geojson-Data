@@ -8,64 +8,65 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0; /* Remove default margin */
-            padding: 0; /* Remove default padding */
+            margin: 0;
+            padding: 0;
         }
 
         #map {
-            height: 100vh; /* Set the map height to 100% of the viewport height */
-            width: 100vw; /* Set the map width to 100% of the viewport width */
+            height: 80vh; /* Adjust the height to make it more responsive */
+            width: 100%;
         }
 
         #legend {
             background: white;
-            line-height: 1.4; /* Adjusted for smaller legend */
-            padding: 5px; /* Reduced padding */
+            line-height: 1.8;
+            padding: 10px;
             margin: 10px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             position: absolute;
-            bottom: 10px; /* Position at the bottom */
-            left: 10px; /* Align to the left */
-            z-index: 1000; /* Ensure it stays on top */
-            font-size: 12px; /* Smaller font size */
+            bottom: 10px; /* Position legend at the bottom */
+            left: 10px; /* Position legend at the left */
+            z-index: 1000;
+            max-width: 300px; /* Limit the width of the legend */
+            font-size: 14px; /* Smaller font size */
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px; /* Position controls at the top */
+            left: 10px; /* Align controls to the left */
+            z-index: 1001; /* Ensure it is above the map */
+            background-color: white; /* Background for better visibility */
+            padding: 10px; /* Padding for controls */
+            border-radius: 5px; /* Rounded corners */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow effect */
         }
 
         h1 {
-            font-size: 16px; /* Reduced title font size */
-            margin: 10px; /* Add margin around the title */
-            position: absolute; /* Make title absolute */
-            top: 10px; /* Position at the top */
-            left: 10px; /* Align to the left */
-            z-index: 1000; /* Ensure it stays on top */
-            background: rgba(255, 255, 255, 0.8); /* Slight background for readability */
-            padding: 5px; /* Add padding */
+            font-size: 16px; /* Smaller title font size */
+            margin: 0; /* Remove default margin */
+            padding-bottom: 5px; /* Space between title and controls */
         }
 
-        input[type="text"] {
-            position: absolute; /* Position absolute */
-            top: 50px; /* Position below the title */
-            left: 10px; /* Align to the left */
-            z-index: 1000; /* Ensure it stays on top */
-            padding: 5px; /* Add padding */
-        }
-
-        button {
-            position: absolute; /* Position absolute */
-            top: 50px; /* Position below the title */
-            left: 200px; /* Position right next to the input */
-            z-index: 1000; /* Ensure it stays on top */
-            padding: 5px; /* Add padding */
+        input {
+            margin-bottom: 5px; /* Space between input and button */
+            width: 100%; /* Full width for input */
         }
     </style>
 </head>
 <body>
-
-    <h1>Planning Area Restrictions</h1> <!-- Updated title -->
-    <input type="text" id="postcode" placeholder="Enter postcode" />
-    <button onclick="searchPostcode()">Search</button>
-    <div id="map"></div> <!-- This is where the map will be displayed -->
-    <div id="legend"></div> <!-- This is where the legend will be displayed -->
+    <div id="controls">
+        <h1>Planning Area Restrictions</h1>
+        <input type="text" id="postcode" placeholder="Enter postcode" />
+        <button onclick="searchPostcode()">Search</button>
+        <div id="zoom-controls" style="margin-top: 10px;">
+            <button onclick="mainMap.zoomIn()">Zoom In</button>
+            <button onclick="mainMap.zoomOut()">Zoom Out</button>
+        </div>
+    </div>
+    <div id="map"></div>
+    <div id="legend"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -101,9 +102,7 @@
         loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
         loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
         loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
-        
-        // New Conservation Area layer from the provided API link
-        loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'purple', 'Conservation Area');
+        loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
 
         // Search function to center the map on postcode
         async function searchPostcode() {
@@ -123,11 +122,6 @@
                 console.error('Error fetching postcode:', error);
             }
         }
-
-        // Ensure map resizes correctly
-        window.addEventListener('resize', function() {
-            mainMap.invalidateSize();
-        });
     </script>
 </body>
 </html>
