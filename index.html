@@ -13,7 +13,7 @@
         }
 
         #map {
-            height: 80vh; /* Adjust the height to make it more responsive */
+            height: 80vh; /* Use a percentage for responsive height */
             width: 100%;
         }
 
@@ -53,6 +53,15 @@
             margin-bottom: 5px; /* Space between input and button */
             width: 100%; /* Full width for input */
         }
+
+        .zoom-button {
+            font-size: 20px; /* Increase size for visibility */
+            background: none; /* No background for cleaner look */
+            border: none; /* No border */
+            cursor: pointer; /* Pointer cursor */
+            padding: 5px; /* Padding for button */
+            margin: 2px; /* Margin between buttons */
+        }
     </style>
 </head>
 <body>
@@ -61,8 +70,8 @@
         <input type="text" id="postcode" placeholder="Enter postcode" />
         <button onclick="searchPostcode()">Search</button>
         <div id="zoom-controls" style="margin-top: 10px;">
-            <button onclick="mainMap.zoomIn()">Zoom In</button>
-            <button onclick="mainMap.zoomOut()">Zoom Out</button>
+            <button class="zoom-button" onclick="mainMap.zoomIn()">+</button>
+            <button class="zoom-button" onclick="mainMap.zoomOut()">-</button>
         </div>
     </div>
     <div id="map"></div>
