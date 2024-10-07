@@ -8,10 +8,13 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
         }
 
         #map {
-            height: 500px; /* Height of the map */
+            height: 100vh; /* Set the map height to 100% of the viewport height */
+            width: 100vw; /* Set the map width to 100% of the viewport width */
         }
 
         #legend {
@@ -30,7 +33,29 @@
 
         h1 {
             font-size: 16px; /* Reduced title font size */
-            margin-bottom: 10px; /* Add space below the title */
+            margin: 10px; /* Add margin around the title */
+            position: absolute; /* Make title absolute */
+            top: 10px; /* Position at the top */
+            left: 10px; /* Align to the left */
+            z-index: 1000; /* Ensure it stays on top */
+            background: rgba(255, 255, 255, 0.8); /* Slight background for readability */
+            padding: 5px; /* Add padding */
+        }
+
+        input[type="text"] {
+            position: absolute; /* Position absolute */
+            top: 50px; /* Position below the title */
+            left: 10px; /* Align to the left */
+            z-index: 1000; /* Ensure it stays on top */
+            padding: 5px; /* Add padding */
+        }
+
+        button {
+            position: absolute; /* Position absolute */
+            top: 50px; /* Position below the title */
+            left: 200px; /* Position right next to the input */
+            z-index: 1000; /* Ensure it stays on top */
+            padding: 5px; /* Add padding */
         }
     </style>
 </head>
@@ -98,7 +123,11 @@
                 console.error('Error fetching postcode:', error);
             }
         }
+
+        // Ensure map resizes correctly
+        window.addEventListener('resize', function() {
+            mainMap.invalidateSize();
+        });
     </script>
 </body>
 </html>
-
