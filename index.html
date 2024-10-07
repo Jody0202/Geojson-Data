@@ -1,46 +1,98 @@
-// Initialize the map
-const mainMap = L.map('map').setView([51.505, -0.09], 10); // Centered on London
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
 
-// Load OpenStreetMap tiles
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap'
-}).addTo(mainMap);
+        #map {
+            height: 500px; /* Height of the map */
+        }
 
-// Function to load GeoJSON layers
-function loadGeoJSON(url, color, name) {
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            L.geoJSON(data, {
-                style: function () {
-                    return { color: color, weight: 2, fillOpacity: 0.5 };
+        #legend {
+            background: white;
+            line-height: 1.4; /* Adjusted for smaller legend */
+            padding: 5px; /* Reduced padding */
+            margin: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            position: absolute;
+            bottom: 10px; /* Position at the bottom */
+            left: 10px; /* Align to the left */
+            z-index: 1000; /* Ensure it stays on top */
+            font-size: 12px; /* Smaller font size */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>My Interactive Map</h1>
+    <input type="text" id="postcode" placeholder="Enter postcode" />
+    <button onclick="searchPostcode()">Search</button>
+    <div id="map"></div> <!-- This is where the map will be displayed -->
+    <div id="legend"></div> <!-- This is where the legend will be displayed -->
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const mainMap = L.map('map').setView([51.505, -0.09], 10); // Centered on London
+
+        // Load OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(mainMap);
+
+        // Function to load GeoJSON layers
+        function loadGeoJSON(url, color, name) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        style: function () {
+                            return { color: color, weight: 2, fillOpacity: 0.5 };
+                        }
+                    }).addTo(mainMap);
+
+                    // Update legend
+                    const legendItem = document.createElement('div');
+                    legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
+                    document.getElementById('legend').appendChild(legendItem);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
+
+        // Load layers with their corresponding colors and names
+        loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
+        loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
+        loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
+        
+        // Replace this with the correct URL for your conservation area GeoJSON file
+        loadGeoJSON('https://drive.google.com/uc?export=download&id=1TPxpqX9FQRFIWBkhwvYbV1sGA4LQnn47', 'orange', 'Conservation Area');
+
+        // Search function to center the map on postcode
+        async function searchPostcode() {
+            const postcode = document.getElementById('postcode').value;
+            try {
+                const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+                const data = await response.json();
+
+                if (data.status === 200) {
+                    const { latitude, longitude } = data.result;
+                    mainMap.setView([latitude, longitude], 13);
+                    L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`).openPopup();
+                } else {
+                    alert('Postcode not found');
                 }
-            }).addTo(mainMap);
-
-            // Update legend
-            const legendItem = document.createElement('div');
-            legendItem.innerHTML = `<span style="background-color: ${color}; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>${name}`;
-            document.getElementById('legend').appendChild(legendItem);
-        })
-        .catch(error => console.error('Error loading GeoJSON:', error));
-}
-
-// Load layers with their corresponding colors and names
-loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
-loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
-loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
-
-// Search function to center the map on postcode
-async function searchPostcode() {
-    const postcode = document.getElementById('postcode').value;
-    try {
-        const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
-        const data = await response.json();
-
-        if (data.status ===
+            } catch (error) {
+                console.error('Error fetching postcode:', error);
+            }
+        }
+    </script>
+</body>
+</html>
