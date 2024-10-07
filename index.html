@@ -13,7 +13,7 @@
         }
 
         #map {
-            height: calc(100vh - 150px); /* Map height adjusted for title, postcode entry, and legend */
+            height: calc(100vh - 50px); /* Map height adjusted for postcode entry */
         }
 
         #legend {
@@ -29,21 +29,9 @@
             z-index: 1000; /* Ensure it stays on top */
         }
 
-        #title {
-            font-size: 20px; /* Adjust title font size as needed */
-            text-align: left;
-            background-color: white; /* White background for title */
-            padding: 10px;
-            border-radius: 5px;
-            position: absolute; /* Position at the top left */
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-        }
-
         #postcode-container {
             position: absolute;
-            top: 50px; /* Positioning under the title */
+            top: 10px; /* Positioning at the top left */
             left: 10px;
             z-index: 1000;
             background-color: white; /* White background for postcode entry */
@@ -62,7 +50,6 @@
 </head>
 <body>
 
-    <div id="title">Planning Area Restrictions</div>
     <div id="postcode-container">
         <input type="text" id="postcode" placeholder="Enter postcode" />
     </div>
