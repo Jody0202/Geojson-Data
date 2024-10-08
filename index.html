@@ -35,14 +35,14 @@
         /* Adjust the search box size */
         .search-container {
             position: absolute;
-            top: 10px;
+            top: 60px; /* Move down to avoid overlap with zoom buttons */
             left: 10px;
             z-index: 1000;
-            width: 230px; /* Reduced width */
+            width: 230px; /* Fixed width */
         }
 
         .search-input {
-            width: 150px; /* Reduced width by 2cm (~20px) */
+            width: 150px; /* Reduced width by 2cm */
             padding: 5px;
         }
 
@@ -68,7 +68,7 @@
             maxZoom: 19
         }).addTo(map);
 
-        // GeoJSON layers - adjust your geojson URLs here
+        // GeoJSON layers - ensure these variables are initialized globally
         var article4 = L.geoJson(null, {
             style: {color: 'blue', weight: 2}
         }).addTo(map);
@@ -85,32 +85,47 @@
             style: {color: 'green', weight: 2}
         }).addTo(map);
 
-        // Listed Buildings layer
         var listedBuilding = L.geoJson(null, {
             style: {color: 'red', weight: 2}
         }).addTo(map);
 
         // Fetching GeoJSON data for layers
+        // Ensure these URLs are correct and accessible
         fetch('path-to-article4-geojson')
             .then(res => res.json())
-            .then(data => article4.addData(data));
+            .then(data => {
+                article4.addData(data);
+                console.log('Article 4 data added:', data);
+            }).catch(err => console.error('Error loading Article 4 data:', err));
 
         fetch('path-to-aonb-geojson')
             .then(res => res.json())
-            .then(data => aonb.addData(data));
+            .then(data => {
+                aonb.addData(data);
+                console.log('AONB data added:', data);
+            }).catch(err => console.error('Error loading AONB data:', err));
 
         fetch('path-to-conservation-geojson')
             .then(res => res.json())
-            .then(data => conservationArea.addData(data));
+            .then(data => {
+                conservationArea.addData(data);
+                console.log('Conservation Area data added:', data);
+            }).catch(err => console.error('Error loading Conservation Area data:', err));
 
         fetch('path-to-greenbelt-geojson')
             .then(res => res.json())
-            .then(data => greenbelt.addData(data));
+            .then(data => {
+                greenbelt.addData(data);
+                console.log('Greenbelt data added:', data);
+            }).catch(err => console.error('Error loading Greenbelt data:', err));
 
         // Historic England Listed Building Layer
         fetch('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/National_Heritage_List_for_England_NHLE_v02_VIEW/FeatureServer/3/query?outFields=*&where=1%3D1&f=geojson')
             .then(res => res.json())
-            .then(data => listedBuilding.addData(data));
+            .then(data => {
+                listedBuilding.addData(data);
+                console.log('Listed Building data added:', data);
+            }).catch(err => console.error('Error loading Listed Building data:', err));
 
         // Postcode search function
         function searchPostcode() {
@@ -118,12 +133,17 @@
             fetch(`https://api.postcodes.io/postcodes/${postcode}`)
                 .then(response => response.json())
                 .then(data => {
-                    var lat = data.result.latitude;
-                    var lon = data.result.longitude;
-                    map.setView([lat, lon], 14);
+                    if (data.status === 200) {
+                        var lat = data.result.latitude;
+                        var lon = data.result.longitude;
+                        map.setView([lat, lon], 14);
+                    } else {
+                        alert('Postcode not found');
+                    }
                 })
                 .catch(err => {
-                    alert('Postcode not found');
+                    alert('Error finding postcode');
+                    console.error(err);
                 });
         }
 
