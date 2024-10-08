@@ -3,136 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map</title>
+    <title>Planning Area Restrictions</title>
     <style>
-        /* Make sure the map fills the viewport */
-        body, html {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
         #map {
             height: 100vh;
-            width: 100vw;
-            margin: 0;
-            padding: 0;
+            width: 100%;
         }
 
-        /* Postcode search bar styling */
-        .search-container {
+        .search-bar {
             position: absolute;
             top: 10px;
-            left: 1.7cm;
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        .search-container input[type="text"] {
-            width: calc(100% - 2cm); /* Shortened by 2 cm */
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        /* Legend styling */
-        .legend {
-            position: absolute;
-            bottom: 30px;
             left: 10px;
-            background: white;
+            z-index: 1000;
+            background-color: white;
             padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            font-size: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
         }
 
-        .legend div {
-            display: inline-block;
-            width: 45%;
+        .search-bar input {
+            width: calc(100% - 100px); /* Adjust width to make it shorter by 2cm */
+            padding: 5px;
         }
 
-        .legend-color-box {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            display: inline-block;
+        .search-bar button {
+            padding: 5px 10px;
+        }
+
+        .legend {
+            background-color: white;
+            padding: 10px;
+            font-size: 12px; /* Reduced font size */
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .legend table {
+            border-spacing: 10px;
+        }
+
+        .legend td {
+            padding: 5px;
+        }
+
+        /* Split the legend into 2 columns */
+        .legend .left-column {
+            float: left;
+            width: 50%;
+        }
+
+        .legend .right-column {
+            float: right;
+            width: 50%;
         }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 </head>
 <body>
-    <!-- Postcode search bar -->
-    <div class="search-container">
-        <form id="searchForm">
-            <input type="text" id="postcode" placeholder="Enter postcode">
-            <button type="submit">Search</button>
-        </form>
+
+<div class="search-bar">
+    <input type="text" id="postcode" placeholder="Enter postcode">
+    <button onclick="geocodePostcode()">Search</button>
+</div>
+
+<div id="map"></div>
+
+<div class="legend">
+    <div class="left-column">
+        <table>
+            <tr><td><span style="background-color: blue; width: 12px; height: 12px; display: inline-block;"></span></td><td>Article 4 Direction</td></tr>
+            <tr><td><span style="background-color: orange; width: 12px; height: 12px; display: inline-block;"></span></td><td>Area of Outstanding Natural Beauty</td></tr>
+            <tr><td><span style="background-color: green; width: 12px; height: 12px; display: inline-block;"></span></td><td>Conservation Area</td></tr>
+        </table>
     </div>
-
-    <!-- Map container -->
-    <div id="map"></div>
-
-    <!-- Legend -->
-    <div class="legend">
-        <div>
-            <div><span class="legend-color-box" style="background-color: blue;"></span>Article 4 Direction</div>
-            <div><span class="legend-color-box" style="background-color: green;"></span>Green Belt</div>
-        </div>
-        <div>
-            <div><span class="legend-color-box" style="background-color: orange;"></span>Area of Outstanding Natural Beauty</div>
-            <div><span class="legend-color-box" style="background-color: red;"></span>Listed Building</div>
-        </div>
-        <div>
-            <div><span class="legend-color-box" style="background-color: yellow;"></span>Conservation Area</div>
-        </div>
+    <div class="right-column">
+        <table>
+            <tr><td><span style="background-color: lightgreen; width: 12px; height: 12px; display: inline-block;"></span></td><td>Green Belt</td></tr>
+            <tr><td><span style="background-color: red; width: 12px; height: 12px; display: inline-block;"></span></td><td>Listed Building</td></tr>
+        </table>
     </div>
+</div>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script>
-        // Initialize the map
-        var map = L.map('map').setView([51.505, -0.09], 10);
+<script>
+    var map = L.map('map').setView([51.505, -0.09], 13);
 
-        // Add OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
+    // Base layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+    }).addTo(map);
 
-        // Add GeoJSON layers for Conservation Area and Listed Building
+    // Article 4 Direction layer
+    var article4Layer = L.geoJSON(null, {
+        style: { color: 'blue', weight: 2 }
+    }).addTo(map);
+    fetch('https://path-to-your-article-4-data.geojson')
+        .then(response => response.json())
+        .then(data => article4Layer.addData(data));
 
-        // Conservation Area Layer
-        var conservationUrl = 'https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson';
-        fetch(conservationUrl)
-            .then(response => response.json())
-            .then(data => {
-                L.geoJSON(data, {
-                    style: {
-                        color: "yellow"
-                    }
-                }).addTo(map);
-            });
+    // Conservation Area layer
+    var conservationLayer = L.geoJSON(null, {
+        style: { color: 'green', weight: 2 }
+    }).addTo(map);
+    fetch('https://path-to-your-conservation-area-data.geojson')
+        .then(response => response.json())
+        .then(data => conservationLayer.addData(data));
 
-        // Listed Building Layer
-        var listedBuildingUrl = 'https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/National_Heritage_List_for_England_NHLE_v02_VIEW/FeatureServer/3/query?outFields=*&where=1%3D1&f=geojson';
-        fetch(listedBuildingUrl)
-            .then(response => response.json())
-            .then(data => {
-                L.geoJSON(data, {
-                    style: {
-                        color: "red"
-                    }
-                }).addTo(map);
-            });
+    // Listed Building layer
+    var listedBuildingLayer = L.geoJSON(null, {
+        style: { color: 'red', weight: 2 }
+    }).addTo(map);
+    fetch('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/National_Heritage_List_for_England_NHLE_v02_VIEW/FeatureServer/3/query?outFields=*&where=1%3D1&f=geojson')
+        .then(response => response.json())
+        .then(data => listedBuildingLayer.addData(data));
 
-        // Postcode search function (implement the logic here)
-        document.getElementById('searchForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            var postcode = document.getElementById('postcode').value;
-            // Add logic to search and zoom to the postcode area
+    // Geocoder for postcode search
+    var geocoder = L.Control.geocoder().addTo(map);
+
+    function geocodePostcode() {
+        var postcode = document.getElementById("postcode").value;
+        geocoder.geocode(postcode, function(results) {
+            if (results.length > 0) {
+                map.setView(results[0].center, 14);
+            }
         });
-    </script>
+    }
+</script>
+
 </body>
 </html>
