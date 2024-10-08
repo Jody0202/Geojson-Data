@@ -11,15 +11,19 @@
             height: 95vh;
             width: 100%;
         }
+
+        /* Legend styling */
         .legend {
             background: white;
             padding: 10px;
-            line-height: 18px;
-            color: #333;
             font-size: 12px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
             border-radius: 5px;
+            display: grid;
+            grid-template-columns: auto auto; /* Two-column layout for the legend */
+            grid-gap: 10px;
         }
+
         .legend i {
             width: 18px;
             height: 18px;
@@ -27,16 +31,21 @@
             margin-right: 8px;
             opacity: 0.7;
         }
+
+        /* Adjust the search box size */
         .search-container {
             position: absolute;
             top: 10px;
-            left: 50px;
+            left: 10px;
             z-index: 1000;
+            width: 230px; /* Reduced width */
         }
+
         .search-input {
-            width: 200px;
+            width: 150px; /* Reduced width by 2cm (~20px) */
             padding: 5px;
         }
+
         .search-btn {
             padding: 5px 10px;
         }
@@ -47,6 +56,7 @@
         <input id="postcode" class="search-input" type="text" placeholder="Enter postcode">
         <button class="search-btn" onclick="searchPostcode()">Search</button>
     </div>
+
     <div id="map"></div>
 
     <script>
@@ -58,7 +68,7 @@
             maxZoom: 19
         }).addTo(map);
 
-        // GeoJSON layers
+        // GeoJSON layers - adjust your geojson URLs here
         var article4 = L.geoJson(null, {
             style: {color: 'blue', weight: 2}
         }).addTo(map);
@@ -75,16 +85,29 @@
             style: {color: 'green', weight: 2}
         }).addTo(map);
 
-        // Historic England Listed Building Layer
+        // Listed Buildings layer
         var listedBuilding = L.geoJson(null, {
             style: {color: 'red', weight: 2}
         }).addTo(map);
 
-        // Load layers
-        fetch('path-to-article4-geojson').then(res => res.json()).then(data => article4.addData(data));
-        fetch('path-to-aonb-geojson').then(res => res.json()).then(data => aonb.addData(data));
-        fetch('path-to-conservation-geojson').then(res => res.json()).then(data => conservationArea.addData(data));
-        fetch('path-to-greenbelt-geojson').then(res => res.json()).then(data => greenbelt.addData(data));
+        // Fetching GeoJSON data for layers
+        fetch('path-to-article4-geojson')
+            .then(res => res.json())
+            .then(data => article4.addData(data));
+
+        fetch('path-to-aonb-geojson')
+            .then(res => res.json())
+            .then(data => aonb.addData(data));
+
+        fetch('path-to-conservation-geojson')
+            .then(res => res.json())
+            .then(data => conservationArea.addData(data));
+
+        fetch('path-to-greenbelt-geojson')
+            .then(res => res.json())
+            .then(data => greenbelt.addData(data));
+
+        // Historic England Listed Building Layer
         fetch('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/National_Heritage_List_for_England_NHLE_v02_VIEW/FeatureServer/3/query?outFields=*&where=1%3D1&f=geojson')
             .then(res => res.json())
             .then(data => listedBuilding.addData(data));
@@ -108,11 +131,11 @@
         var legend = L.control({position: 'bottomleft'});
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'legend');
-            div.innerHTML += '<i style="background: blue"></i> Article 4 Direction<br>';
-            div.innerHTML += '<i style="background: green"></i> Green Belt<br>';
-            div.innerHTML += '<i style="background: orange"></i> Area of Outstanding Natural Beauty<br>';
-            div.innerHTML += '<i style="background: red"></i> Listed Building<br>';
-            div.innerHTML += '<i style="background: purple"></i> Conservation Area<br>';
+            div.innerHTML += '<i style="background: blue"></i> Article 4 Direction';
+            div.innerHTML += '<i style="background: green"></i> Green Belt';
+            div.innerHTML += '<i style="background: orange"></i> Area of Outstanding Natural Beauty';
+            div.innerHTML += '<i style="background: red"></i> Listed Building';
+            div.innerHTML += '<i style="background: purple"></i> Conservation Area';
             return div;
         };
         legend.addTo(map);
