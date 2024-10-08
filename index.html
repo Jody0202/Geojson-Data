@@ -31,6 +31,13 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
 
+        .search-container input[type="text"] {
+            width: calc(100% - 2cm); /* Shortened by 2 cm */
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
         /* Legend styling */
         .legend {
             position: absolute;
@@ -40,7 +47,7 @@
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            font-size: 10px; /* Reduced font size for all text */
+            font-size: 10px;
         }
 
         .legend div {
@@ -94,8 +101,31 @@
             maxZoom: 19
         }).addTo(map);
 
-        // Example of loading geojson layers (like conservation area)
-        // L.geoJSON(<geojson_data>).addTo(map); 
+        // Add GeoJSON layers for Conservation Area and Listed Building
+
+        // Conservation Area Layer
+        var conservationUrl = 'https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson';
+        fetch(conservationUrl)
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: {
+                        color: "yellow"
+                    }
+                }).addTo(map);
+            });
+
+        // Listed Building Layer
+        var listedBuildingUrl = 'https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/National_Heritage_List_for_England_NHLE_v02_VIEW/FeatureServer/3/query?outFields=*&where=1%3D1&f=geojson';
+        fetch(listedBuildingUrl)
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: {
+                        color: "red"
+                    }
+                }).addTo(map);
+            });
 
         // Postcode search function (implement the logic here)
         document.getElementById('searchForm').addEventListener('submit', function(e) {
@@ -103,19 +133,6 @@
             var postcode = document.getElementById('postcode').value;
             // Add logic to search and zoom to the postcode area
         });
-
-        // Adding example layers (replace with actual layers if needed)
-        var conservationLayer = L.geoJSON(null, {
-            style: function(feature) {
-                return { color: "yellow" };
-            }
-        }).addTo(map);
-
-        var listedBuildingLayer = L.geoJSON(null, {
-            style: function(feature) {
-                return { color: "red" };
-            }
-        }).addTo(map);
     </script>
 </body>
 </html>
