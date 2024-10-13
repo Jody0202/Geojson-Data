@@ -66,44 +66,44 @@
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    // Initialize the map
     const mainMap = L.map('map').setView([51.505, -0.09], 10);
 
-    // Load OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
     }).addTo(mainMap);
 
-    // Function to load GeoJSON layers
+    let article4Layer;
+    let article4Data; // Store the loaded Article 4 GeoJSON data
+
     function loadGeoJSON(url, color, name) {
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                L.geoJSON(data, {
+                const layer = L.geoJSON(data, {
                     style: function () {
                         return { color: color, weight: 2, fillOpacity: 0.5 };
                     }
                 }).addTo(mainMap);
 
-                // Update legend
+                if (name === 'Article 4 Direction') {
+                    article4Layer = layer; // Save Article 4 layer
+                    article4Data = data; // Store the data globally
+                }
+
                 const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item'; // Add class for legend items
+                legendItem.className = 'legend-item';
                 legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
                 document.getElementById('legend').appendChild(legendItem);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
 
-    // Load layers with their corresponding colors and names
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
-
-    // Load the Conservation Area layer last to ensure it is on top
     loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
 
-    // Search function to center the map on postcode
     async function searchPostcode() {
         const postcode = document.getElementById('postcode').value;
         try {
@@ -113,7 +113,14 @@
             if (data.status === 200) {
                 const { latitude, longitude } = data.result;
                 mainMap.setView([latitude, longitude], 13);
-                L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`).openPopup();
+
+                const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`);
+                marker.openPopup();
+
+                // Check if the postcode falls within an Article 4 polygon
+                if (article4Data) {
+                    checkInArticle4Area(latitude, longitude, marker);
+                }
             } else {
                 alert('Postcode not found');
             }
@@ -121,6 +128,28 @@
             console.error('Error fetching postcode:', error);
         }
     }
+
+    // Function to check if a point is inside any Article 4 polygon
+    function checkInArticle4Area(lat, lng, marker) {
+        const point = turf.point([lng, lat]); // Use Turf.js to create a point
+
+        let foundArea = null;
+        for (const feature of article4Data.features) {
+            const polygon = turf.feature(feature);
+            if (turf.booleanPointInPolygon(point, polygon)) {
+                foundArea = feature;
+                break;
+            }
+        }
+
+        if (foundArea) {
+            const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
+            marker.bindPopup(`Postcode is in an Article 4 area: ${pdRights}`).openPopup();
+        } else {
+            marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
+        }
+    }
 </script>
+<script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
 </body>
 </html>
