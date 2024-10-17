@@ -11,24 +11,21 @@
             font-family: Arial, sans-serif;
         }
         #map {
-            height: 80vh; /* Adjusted for responsive design */
+            height: 80vh;
             width: 100%;
-            position: relative;
-            top: 0;
         }
         #search-container {
             position: absolute;
             top: 10px;
-            left: 1.7cm; /* Offset from the left boundary */
+            left: 1.7cm;
             background-color: white;
             padding: 10px;
-            z-index: 1000; /* Ensure it stays above the map */
+            z-index: 1000;
             border-radius: 5px;
-            width: 200px; /* Reduced width */
+            width: 200px;
         }
-
         .search-input {
-            width: 150px; /* Reduced width by 2cm (~20px) */
+            width: 150px;
             padding: 5px;
         }
         #legend {
@@ -44,10 +41,8 @@
         }
         .legend-title {
             font-weight: bold;
-            font-size: 12px; /* Reduced font size for the title */
         }
         .legend-item {
-            font-size: 12px; /* Set font size to match the legend title */
             margin-top: 5px;
         }
     </style>
@@ -77,6 +72,17 @@
 
     let article4Layer;
     let article4Data; // Store the loaded Article 4 GeoJSON data
+
+    // Define the meaning of Article 4 codes manually
+    const article4CodeMeanings = {
+        '3L': 'Restrictions on HMOs',
+        // Add more codes as needed
+        'A1': 'Restriction on commercial development',
+        'B2': 'Restriction on industrial development',
+        'C3': 'Restriction on residential changes',
+        'D1': 'Restriction on educational use',
+        // Add other codes and their meanings here
+    };
 
     // Fetch and load the GeoJSON layers, including Article 4 data
     function loadGeoJSON(url, color, name) {
@@ -149,12 +155,13 @@
 
         if (foundArea) {
             const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
-            marker.bindPopup(`Postcode is in an Article 4 area: ${pdRights}`).openPopup();
+            const restrictions = getRestrictionsFromCodes(pdRights);
+            marker.bindPopup(`Postcode is in an Article 4 area.<br><br>${restrictions}`).openPopup();
         } else {
             marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
         }
     }
-</script>
 
-</body>
-</html>
+    // Convert the codes in 'permitted-development-rights' into their descriptions
+    function getRestrictionsFromCodes(codes) {
+        if (!codes) return 'Article 4 Direction';
