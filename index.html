@@ -164,4 +164,20 @@
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
     function getRestrictionsFromCodes(codes) {
-        if (!codes) return 'Article 4 Direction';
+        if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
+
+        // Split the codes if there are multiple, separated by hyphens
+        const codeArray = codes.split('-');
+        let restrictions = '';
+
+        codeArray.forEach(code => {
+            const meaning = article4CodeMeanings[code] || `Unknown restriction for code ${code}`;
+            restrictions += `${meaning}<br>`; // Add each restriction on a new line
+        });
+
+        return restrictions;
+    }
+</script>
+
+</body>
+</html>
