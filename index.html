@@ -19,42 +19,11 @@
         #search-container {
             position: absolute;
             top: 10px;
-            left: 1.7cm; /* Offset from the left boundary */
+            left: 10px; /* Adjusted position */
             background-color: white;
             padding: 10px;
             z-index: 1000; /* Ensure it stays above the map */
             border-radius: 5px;
-            width: 200px; /* Reduced width */
-        }
-
-        .search-input {
-            width: 150px; /* Reduced width by 2cm (~20px) */
-            padding: 5px;
-        }
-        #legend {
-            background: white;
-            line-height: 1.5;
-            padding: 10px;
-            margin: 10px;
-            border-radius: 5px;
-            z-index: 1000;
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-        }
-        .legend-title {
-            font-weight: bold;
-            font-size: 12px; /* Reduced font size for the title */
-        }
-        .legend-item {
-            font-size: 12px; /* Set font size to match the legend title */
-            margin-top: 5px;
-        }
-        .restriction-list {
-            font-size: 12px;
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
         }
     </style>
 </head>
@@ -66,22 +35,18 @@
 </div>
 
 <div id="map"></div>
-<div id="legend">
-    <div class="legend-title">Legend</div>
-</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
 
 <script>
-    const mainMap = L.map('map').setView([51.505, -0.09], 10);
+    const mainMap = L.map('map').setView([51.505, -0.09], 10); // Default map view
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
     }).addTo(mainMap);
 
-    let article4Layer;
     let article4Data; // Store the loaded Article 4 GeoJSON data
 
     // Mapping of Article 4 codes to their meanings
@@ -95,35 +60,37 @@
         '1F': 'Restrictions on Hard surfaces incidental to the enjoyment of a dwellinghouse',
         '1G': 'Restrictions on Chimneys, flues etc on a dwellinghouse',
         '1H': 'Restrictions on Microwave antenna on a dwellinghouse e.g. Satellite dishes',
+        '2A': 'Restrictions on Gates, fences, walls etc',
+        '2B': 'Restrictions on Means of access to a highway e.g. driveways,
+        '2C': 'Restrictions on Exterior painting',
+        '2D': 'Restrictions on Electrical outlet for recharging vehicles',
+        '2E': 'Restrictions on Electrical upstand for recharging vehicles',
+        '2F': 'Restrictions on Closed circuit television cameras – CCTV',
+        '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
         '3L': 'Restrictions on Small Houses in Multiple Occupation (HMOs) to dwellinghouses and vice versa',
         // Add more codes and their meanings as needed
     };
 
-    // Fetch and load the GeoJSON layers, including Article 4 data
+    // Load the GeoJSON layers
     function loadGeoJSON(url, color, name) {
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                const layer = L.geoJSON(data, {
+                L.geoJSON(data, {
                     style: function () {
                         return { color: color, weight: 2, fillOpacity: 0.5 };
                     }
                 }).addTo(mainMap);
-
+                
+                // Save Article 4 data for later access
                 if (name === 'Article 4 Direction') {
-                    article4Layer = layer; // Save Article 4 layer
-                    article4Data = data; // Store the data globally
+                    article4Data = data;
                 }
-
-                const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
-                legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
-                document.getElementById('legend').appendChild(legendItem);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
 
-    // Load Article 4 and other layers
+    // Load all layers
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
@@ -146,6 +113,8 @@
                 // Check if the postcode falls within an Article 4 polygon
                 if (article4Data) {
                     checkInArticle4Area(latitude, longitude, marker);
+                } else {
+                    console.error('Article 4 data not loaded');
                 }
             } else {
                 alert('Postcode not found');
@@ -159,13 +128,32 @@
     function checkInArticle4Area(lat, lng, marker) {
         const point = turf.point([lng, lat]);
         let foundArea = null;
-        let codes = []; // Array to hold codes
 
-        for (const feature of article4Data.features) {
-            const polygon = feature.geometry;
-            if (turf.booleanPointInPolygon(point, polygon)) {
-                foundArea = feature;
-                console.log('Found Article 4 area:', feature); // Debug log
-                // Assuming the 'codes' field is a string or array of codes
-                if (feature.properties && feature.properties.permitted_development_rights) {
-                    codes = feature.prope
+        if (article4Data) {
+            for (const feature of article4Data.features) {
+                const polygon = feature.geometry;
+                if (turf.booleanPointInPolygon(point, polygon)) {
+                    foundArea = feature;
+                    break;
+                }
+            }
+        }
+
+        if (foundArea) {
+            // Extract the codes from the property (assumed to be a string of codes)
+            const codes = foundArea.properties.permitted_development_rights.split(',').map(code => code.trim());
+            const meanings = codes.map(code => `<li>${code}: ${article4Codes[code] || 'Meaning not defined'}</li>`).join('');
+            const content = `
+                <div>
+                    <strong>Postcode is in an Article 4 area:</strong>
+                    <ul class="restriction-list">${meanings}</ul>
+                </div>`;
+            marker.bindPopup(content).openPopup();
+        } else {
+            marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
+        }
+    }
+</script>
+
+</body>
+</html>
