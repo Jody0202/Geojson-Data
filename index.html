@@ -70,8 +70,8 @@
         attribution: '© OpenStreetMap'
     }).addTo(mainMap);
 
-    let article4Layer, greenBeltLayer, aonbLayer, conservationLayer;
-    let article4Data, greenBeltData, aonbData, conservationData;
+    let article4Layer;
+    let article4Data; // Store the loaded Article 4 GeoJSON data
 
     // Define the meaning of Article 4 codes manually
     const article4CodeMeanings = {
@@ -91,41 +91,38 @@
         '2E': 'Restrictions on Electrical upstand for recharging vehicles',
         '2F': 'Restrictions on Closed circuit television cameras – CCTV',
         '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
-        '3L': 'Restrictions on Small Houses in Multiple Occupation (HMOs) to dwellinghouses and vice versa'
+        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion'
     };
 
-    // Function to load and add GeoJSON layers
-    function loadGeoJSON(url, color, name, storeVariable) {
+    // Fetch and load the GeoJSON layers, including Article 4 data
+    function loadGeoJSON(url, color, name) {
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                storeVariable.data = data; // Save the GeoJSON data
-
                 const layer = L.geoJSON(data, {
                     style: function () {
                         return { color: color, weight: 2, fillOpacity: 0.5 };
                     }
                 }).addTo(mainMap);
 
-                storeVariable.layer = layer; // Save the layer
+                if (name === 'Article 4 Direction') {
+                    article4Layer = layer; // Save Article 4 layer
+                    article4Data = data; // Store the data globally
+                }
 
-                // Add the item to the legend
                 const legendItem = document.createElement('div');
                 legendItem.className = 'legend-item';
                 legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
                 document.getElementById('legend').appendChild(legendItem);
-                
-                // Log for debugging
-                console.log(`Loaded layer for: ${name}`, data);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
 
-    // Load all the relevant layers
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction', { layer: article4Layer, data: article4Data });
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty', { layer: aonbLayer, data: aonbData });
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt', { layer: greenBeltLayer, data: greenBeltData });
-    loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area', { layer: conservationLayer, data: conservationData });
+    // Load Article 4 and other layers
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
+    loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
 
     // Search function for postcode
     async function searchPostcode() {
@@ -141,8 +138,10 @@
                 const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`);
                 marker.openPopup();
 
-                // Check if the postcode falls within any relevant area
-                checkAreaRestrictions(latitude, longitude, marker);
+                // Check if the postcode falls within an Article 4 polygon
+                if (article4Data) {
+                    checkInArticle4Area(latitude, longitude, marker);
+                }
             } else {
                 alert('Postcode not found');
             }
@@ -151,64 +150,26 @@
         }
     }
 
-    // Check if a point is inside any polygon from the loaded areas
-    function checkAreaRestrictions(lat, lng, marker) {
-        const point = turf.point([lng, lat]);
-        let popupContent = `You are here.`;
-
-        // Check if the point is inside the Green Belt
-        if (isPointInLayer(greenBeltData, point)) {
-            console.log("Point is in Green Belt");
-            popupContent += `<br>Green Belt`;
-        }
-
-        // Check if the point is inside the Area of Outstanding Natural Beauty (AONB)
-        if (isPointInLayer(aonbData, point)) {
-            console.log("Point is in AONB");
-            popupContent += `<br>Area of Outstanding Natural Beauty`;
-        }
-
-        // Check if the point is inside a Conservation Area
-        if (isPointInLayer(conservationData, point)) {
-            console.log("Point is in Conservation Area");
-            popupContent += `<br>Conservation Area`;
-        }
-
-        // Check if the point is inside an Article 4 area
-        const article4Content = checkInArticle4Area(lat, lng);
-        if (article4Content) {
-            console.log("Point is in Article 4 area");
-            popupContent += `<br>Article 4 Direction: ${article4Content}`;
-        }
-
-        // Update the marker's popup content
-        marker.setPopupContent(popupContent);
-    }
-
-    // Check if a point is inside any feature in a given GeoJSON layer
-    function isPointInLayer(layerData, point) {
-        if (!layerData || !layerData.features) return false;
-
-        return layerData.features.some(feature => {
-            const polygon = turf.polygon(feature.geometry.coordinates);
-            return turf.booleanPointInPolygon(point, polygon);
-        });
-    }
-
-    // Check for Article 4 Directions
-    function checkInArticle4Area(lat, lng) {
+    // Check if a point is inside an Article 4 polygon
+    function checkInArticle4Area(lat, lng, marker) {
         const point = turf.point([lng, lat]);
 
-        if (!article4Data || !article4Data.features) return null;
-
+        let foundArea = null;
         for (const feature of article4Data.features) {
-            const polygon = turf.polygon(feature.geometry.coordinates);
+            const polygon = feature.geometry;
             if (turf.booleanPointInPolygon(point, polygon)) {
-                const codes = feature.properties['permitted-development-rights'];
-                return getRestrictionsFromCodes(codes); // Get restrictions based on Article 4 codes
+                foundArea = feature;
+                break;
             }
         }
-        return null;
+
+        if (foundArea) {
+            const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
+            const restrictions = getRestrictionsFromCodes(pdRights);
+            marker.bindPopup(`Postcode is in an Article 4 area.<br><br>${restrictions}`).openPopup();
+        } else {
+            marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
+        }
     }
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
