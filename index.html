@@ -1,141 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Article 4 Map</title>
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-        integrity="sha512-xodZBntM7rGCGwI8nN6tzV8snz1te2qLjr8fIH0zYGU5xc6arCbmF1RzO+Ofj/ZaXuoxk5LKOJ5Q7lTg8Jm2Og=="
-        crossorigin=""
-    />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Area Restrictions</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map {
-            height: 600px;
-            width: 100%;
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
         }
-        #searchContainer {
+        #map {
+            height: 80vh; /* Adjusted for responsive design */
+            width: 100%;
+            position: relative;
+            top: 0;
+        }
+        #search-container {
             position: absolute;
             top: 10px;
-            left: 20px;
-            z-index: 1000;
+            left: 1.7cm; /* Offset from the left boundary */
             background-color: white;
             padding: 10px;
+            z-index: 1000; /* Ensure it stays above the map */
             border-radius: 5px;
+            width: 200px; /* Reduced width */
+        }
+
+        .search-input {
+            width: 150px; /* Reduced width by 2cm (~20px) */
+            padding: 5px;
+        }
+        #legend {
+            background: white;
+            line-height: 1.5;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+        .legend-title {
+            font-weight: bold;
+            font-size: 12px; /* Reduced font size for the title */
+        }
+        .legend-item {
+            font-size: 12px; /* Set font size to match the legend title */
+            margin-top: 5px;
+        }
+        .restriction-list {
+            font-size: 12px;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
         }
     </style>
 </head>
 <body>
-    <div id="searchContainer">
-        <label for="postcodeInput">Enter postcode:</label>
-        <input type="text" id="postcodeInput" />
-        <button id="searchButton">Search</button>
-    </div>
-    <div id="map"></div>
 
-    <script
-        src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-        integrity="sha512-MflbTb8vqQYp9XT6aepW5yZ5ehtPOTC/P1ilwTeXyghc2M9BX/BL8h7J+Pe5vD5tGepLbw5ylH11cJ7lV94/kA=="
-        crossorigin=""
-    ></script>
-    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<div id="search-container">
+    <input type="text" id="postcode" placeholder="Enter postcode" />
+    <button onclick="searchPostcode()">Search</button>
+</div>
 
-    <script>
-        // Initialize the map
-        const map = L.map('map').setView([52.5, -1.9], 12);
+<div id="map"></div>
+<div id="legend">
+    <div class="legend-title">Legend</div>
+</div>
 
-        // Add the base layer (OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-        }).addTo(map);
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
 
-        // Define the layer for Article 4 direction area (GeoJSON data)
-        let article4Layer;
+<script>
+    const mainMap = L.map('map').setView([51.505, -0.09], 10);
 
-        // Sample dictionary of codes for Article 4 explanations
-        const article4Explanations = {
-            "3L": "Restriction on house extension.",
-            "5H": "Limitations on changing use of land.",
-            "2D": "Conservation area - no demolition of structures."
-        };
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(mainMap);
 
-        // Function to add the Article 4 GeoJSON layer to the map
-        function addArticle4Layer(data) {
-            article4Layer = L.geoJSON(data, {
-                style: function (feature) {
-                    return { color: 'blue', weight: 2 };
+    let article4Layer;
+    let article4Data; // Store the loaded Article 4 GeoJSON data
+
+    // Mapping of Article 4 codes to their meanings
+    const article4Codes = {
+        '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
+        '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
+        '1B': 'Restrictions on Additions etc to the roof of a dwellinghouse e.g. Dormers',
+        '1C': 'Restrictions on Any other alterations to a roof of a dwellinghouse',
+        '1D': 'Restrictions on Porches',
+        '1E': 'Restrictions on Buildings etc incidental to the enjoyment of a dwellinghouse e.g. Outbuildings',
+        '1F': 'Restrictions on Hard surfaces incidental to the enjoyment of a dwellinghouse',
+        '1G': 'Restrictions on Chimneys, flues etc on a dwellinghouse',
+        '1H': 'Restrictions on Microwave antenna on a dwellinghouse e.g. Satellite dishes',
+        '2A': 'Restrictions on Gates, fences, walls etc',
+        '2B': 'Restrictions on Means of access to a highway e.g. driveways,
+        '2C': 'Restrictions on Exterior painting',
+        '2D': 'Restrictions on Electrical outlet for recharging vehicles',
+        '2E': 'Restrictions on Electrical upstand for recharging vehicles',
+        '2F': 'Restrictions on Closed circuit television cameras – CCTV',
+        '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
+        '3L': 'Restrictions on Small Houses in Multiple Occupation (HMOs) to dwellinghouses and vice versa',
+        // Add more codes and their meanings as needed
+    };
+
+    // Fetch and load the GeoJSON layers, including Article 4 data
+    function loadGeoJSON(url, color, name) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const layer = L.geoJSON(data, {
+                    style: function () {
+                        return { color: color, weight: 2, fillOpacity: 0.5 };
+                    }
+                }).addTo(mainMap);
+
+                if (name === 'Article 4 Direction') {
+                    article4Layer = layer; // Save Article 4 layer
+                    article4Data = data; // Store the data globally
                 }
-            }).addTo(map);
+
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
+                document.getElementById('legend').appendChild(legendItem);
+            })
+            .catch(error => console.error('Error loading GeoJSON:', error));
+    }
+
+    // Load Article 4 and other layers
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
+    loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
+
+    // Search function for postcode
+    async function searchPostcode() {
+        const postcode = document.getElementById('postcode').value;
+        try {
+            const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+            const data = await response.json();
+
+            if (data.status === 200) {
+                const { latitude, longitude } = data.result;
+                mainMap.setView([latitude, longitude], 13);
+
+                const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`);
+                marker.openPopup();
+
+                // Check if the postcode falls within an Article 4 polygon
+                if (article4Data) {
+                    checkInArticle4Area(latitude, longitude, marker);
+                }
+            } else {
+                alert('Postcode not found');
+            }
+        } catch (error) {
+            console.error('Error fetching postcode:', error);
+        }
+    }
+
+    // Check if a point is inside an Article 4 polygon
+    function checkInArticle4Area(lat, lng, marker) {
+        const point = turf.point([lng, lat]);
+
+        let foundArea = null;
+        let codes = []; // Array to hold codes
+        for (const feature of article4Data.features) {
+            const polygon = feature.geometry;
+            if (turf.booleanPointInPolygon(point, polygon)) {
+                foundArea = feature;
+                // Assuming the 'codes' field is a string or array of codes
+                if (feature.properties.codes) {
+                    codes = feature.properties.codes.split(','); // Modify if needed based on actual data structure
+                }
+                break;
+            }
         }
 
-        // Fetch the GeoJSON data for Article 4 (use the previously working path)
-        axios.get('data/article4.geojson')  // This path was used in previous working code
-            .then(response => {
-                const article4Data = response.data;
-                addArticle4Layer(article4Data);
-            })
-            .catch(error => {
-                console.error('Error loading Article 4 GeoJSON:', error);
-            });
+        if (foundArea) {
+            const meanings = codes.map(code => `<li>${code}: ${article4Codes[code.trim()] || 'Meaning not defined'}</li>`).join('');
+            const content = `
+                <div>
+                    <strong>Postcode is in an Article 4 area:</strong>
+                    <ul class="restriction-list">${meanings}</ul>
+                </div>`;
+            marker.bindPopup(content).openPopup();
+        } else {
+            marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
+        }
+    }
+</script>
 
-        // Function to search by postcode and show Article 4 info
-        document.getElementById('searchButton').addEventListener('click', () => {
-            const postcode = document.getElementById('postcodeInput').value;
-
-            // Fetch postcode coordinates via Postcodes.io API
-            axios
-                .get(`https://api.postcodes.io/postcodes/${postcode}`)
-                .then(response => {
-                    const { longitude, latitude } = response.data.result;
-
-                    // Set the map view to the postcode's location
-                    map.setView([latitude, longitude], 14);
-
-                    // Add a marker for the postcode location
-                    const marker = L.marker([latitude, longitude]).addTo(map);
-
-                    // Check if the postcode is within any Article 4 area
-                    const point = turf.point([longitude, latitude]);
-                    let foundArea = null;
-
-                    // Loop through Article 4 GeoJSON features to check if the point is inside a polygon
-                    for (const feature of article4Layer.toGeoJSON().features) {
-                        const polygon = feature.geometry;
-                        if (turf.booleanPointInPolygon(point, polygon)) {
-                            foundArea = feature;
-                            break;
-                        }
-                    }
-
-                    // Handle the display of Article 4 info
-                    if (foundArea) {
-                        // Extract 'permitted-development-rights' field
-                        const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
-
-                        // Check if there is an explanation for the code
-                        let explanationText = '';
-                        if (pdRights !== 'Not specified') {
-                            const pdCodes = pdRights.split(',');
-                            explanationText = pdCodes
-                                .map(code => article4Explanations[code.trim()] || 'Article 4 Direction')
-                                .join('<br>');
-                        } else {
-                            explanationText = 'Article 4 Direction';
-                        }
-
-                        // Display a popup with the Article 4 info
-                        marker.bindPopup(`Postcode is in an Article 4 area: <br>${explanationText}`).openPopup();
-                    } else {
-                        marker.bindPopup('Postcode is not in an Article 4 area.').openPopup();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching postcode:', error);
-                    alert('Invalid postcode or postcode not found.');
-                });
-        });
-    </script>
 </body>
 </html>
