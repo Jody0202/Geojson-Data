@@ -158,34 +158,14 @@
     // Check if a point is inside an Article 4 polygon
     function checkInArticle4Area(lat, lng, marker) {
         const point = turf.point([lng, lat]);
-
         let foundArea = null;
         let codes = []; // Array to hold codes
+
         for (const feature of article4Data.features) {
             const polygon = feature.geometry;
             if (turf.booleanPointInPolygon(point, polygon)) {
                 foundArea = feature;
+                console.log('Found Article 4 area:', feature); // Debug log
                 // Assuming the 'codes' field is a string or array of codes
-                if (feature.properties.codes) {
-                    codes = feature.properties.codes.split(','); // Modify if needed based on actual data structure
-                }
-                break;
-            }
-        }
-
-        if (foundArea) {
-            const meanings = codes.map(code => `<li>${code}: ${article4Codes[code.trim()] || 'Meaning not defined'}</li>`).join('');
-            const content = `
-                <div>
-                    <strong>Postcode is in an Article 4 area:</strong>
-                    <ul class="restriction-list">${meanings}</ul>
-                </div>`;
-            marker.bindPopup(content).openPopup();
-        } else {
-            marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
-        }
-    }
-</script>
-
-</body>
-</html>
+                if (feature.properties && feature.properties.permitted_development_rights) {
+                    codes = feature.prope
