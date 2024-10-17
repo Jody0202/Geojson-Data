@@ -70,8 +70,8 @@
             }).addTo(map);
         }
 
-        // Fetch the GeoJSON data for Article 4 (using the path that worked in previous code)
-        axios.get('your_previous_geojson_path_here')
+        // Fetch the GeoJSON data for Article 4 (use the previously working path)
+        axios.get('data/article4.geojson')  // This path was used in previous working code
             .then(response => {
                 const article4Data = response.data;
                 addArticle4Layer(article4Data);
