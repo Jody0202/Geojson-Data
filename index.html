@@ -44,6 +44,12 @@
             font-size: 12px; /* Set font size to match the legend title */
             margin-top: 5px;
         }
+        .restriction-list {
+            font-size: 12px;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -73,6 +79,15 @@
 
     let article4Data; // Store the loaded Article 4 GeoJSON data
 
+    // Mapping of Article 4 codes to their meanings
+    const article4Codes = {
+        'A': 'Restrictions on new building development.',
+        'B': 'Restrictions on certain types of renovations.',
+        'C': 'Limitations on converting properties.',
+        'D': 'Controls on changing the use of buildings.',
+        // Add more codes and their meanings as needed
+    };
+
     // Function to load GeoJSON layers
     function loadGeoJSON(url, color, name) {
         fetch(url)
@@ -92,7 +107,7 @@
 
                 // Update legend
                 const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
+                legendItem.className = 'legend-item'; // Add class for legend items
                 legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
                 document.getElementById('legend').appendChild(legendItem);
             })
@@ -149,15 +164,24 @@
         }
 
         if (foundArea) {
-            // Extract the codes from the property
-            const codes = foundArea.properties.permitted_development_rights.split(',').map(code => code.trim());
-            const meanings = codes.map(code => `<li>${code}: ${article4Codes[code] || 'Meaning not defined'}</li>`).join('');
-            const content = `
-                <div>
-                    <strong>Postcode is in an Article 4 area:</strong>
-                    <ul class="restriction-list">${meanings}</ul>
-                </div>`;
-            marker.bindPopup(content).openPopup();
+            // Debugging logs
+            console.log('Found Article 4 area:', foundArea); // Log the found area
+            
+            // Check if the property exists
+            if (foundArea.properties.permitted_development_rights) {
+                // Extract the codes from the property
+                const codes = foundArea.properties.permitted_development_rights.split(',').map(code => code.trim());
+                const meanings = codes.map(code => `<li>${code}: ${article4Codes[code] || 'Meaning not defined'}</li>`).join('');
+                const content = `
+                    <div>
+                        <strong>Postcode is in an Article 4 area:</strong>
+                        <ul class="restriction-list">${meanings}</ul>
+                    </div>`;
+                marker.bindPopup(content).openPopup();
+            } else {
+                console.log('No permitted development rights found for this area.'); // Debug log
+                marker.bindPopup('No permitted development rights found for this area.').openPopup();
+            }
         } else {
             marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
         }
