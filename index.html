@@ -13,6 +13,7 @@
     <style>
         #map {
             height: 600px;
+            width: 100%;
         }
         #searchContainer {
             position: absolute;
@@ -45,7 +46,7 @@
         // Initialize the map
         const map = L.map('map').setView([52.5, -1.9], 12);
 
-        // Add the base layer
+        // Add the base layer (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
         }).addTo(map);
@@ -60,23 +61,30 @@
             "2D": "Conservation area - no demolition of structures."
         };
 
-        // Fetch the GeoJSON data
-        axios.get('path_to_your_geojson_file.geojson').then(response => {
-            const article4Data = response.data;
-
-            // Add the Article 4 GeoJSON layer
-            article4Layer = L.geoJSON(article4Data, {
+        // Function to add the Article 4 GeoJSON layer to the map
+        function addArticle4Layer(data) {
+            article4Layer = L.geoJSON(data, {
                 style: function (feature) {
                     return { color: 'blue', weight: 2 };
                 }
             }).addTo(map);
-        });
+        }
+
+        // Fetch the GeoJSON data for Article 4 (update with your correct URL or file path)
+        axios.get('path_to_your_geojson_file.geojson')
+            .then(response => {
+                const article4Data = response.data;
+                addArticle4Layer(article4Data);
+            })
+            .catch(error => {
+                console.error('Error loading Article 4 GeoJSON:', error);
+            });
 
         // Function to search by postcode and show Article 4 info
         document.getElementById('searchButton').addEventListener('click', () => {
             const postcode = document.getElementById('postcodeInput').value;
 
-            // Fetch postcode coordinates via API (you can use a service for geocoding postcodes)
+            // Fetch postcode coordinates via Postcodes.io API (adjust API or method if needed)
             axios
                 .get(`https://api.postcodes.io/postcodes/${postcode}`)
                 .then(response => {
@@ -92,6 +100,7 @@
                     const point = turf.point([longitude, latitude]);
                     let foundArea = null;
 
+                    // Loop through Article 4 GeoJSON features to check if the point is inside a polygon
                     for (const feature of article4Layer.toGeoJSON().features) {
                         const polygon = feature.geometry;
                         if (turf.booleanPointInPolygon(point, polygon)) {
@@ -100,6 +109,7 @@
                         }
                     }
 
+                    // Handle the display of Article 4 info
                     if (foundArea) {
                         // Extract 'permitted-development-rights' field
                         const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
@@ -115,6 +125,7 @@
                             explanationText = 'Article 4 Direction';
                         }
 
+                        // Display a popup with the Article 4 info
                         marker.bindPopup(`Postcode is in an Article 4 area: <br>${explanationText}`).openPopup();
                     } else {
                         marker.bindPopup('Postcode is not in an Article 4 area.').openPopup();
