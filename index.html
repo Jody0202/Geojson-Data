@@ -1,195 +1,96 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning Area Restrictions</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        #map {
-            height: 80vh;
-            width: 100%;
-        }
-        #search-container {
-            position: absolute;
-            top: 10px;
-            left: 1.7cm;
-            background-color: white;
-            padding: 10px;
-            z-index: 1000;
-            border-radius: 5px;
-            width: 200px;
-        }
-        .search-input {
-            width: 150px;
-            padding: 5px;
-        }
-        #legend {
-            background: white;
-            line-height: 1.5;
-            padding: 10px;
-            margin: 10px;
-            border-radius: 5px;
-            z-index: 1000;
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-        }
-        .legend-title {
-            font-weight: bold;
-        }
-        .legend-item {
-            margin-top: 5px;
-        }
-    </style>
-</head>
-<body>
+// Initialize map
+var map = L.map('map').setView([52.58, -1.83], 12);
 
-<div id="search-container">
-    <input type="text" id="postcode" placeholder="Enter postcode" />
-    <button onclick="searchPostcode()">Search</button>
-</div>
+// Load the tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
 
-<div id="map"></div>
-<div id="legend">
-    <div class="legend-title">Legend</div>
-</div>
+// Define the list of Article 4 codes and their meanings
+var article4Codes = {
+    '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
+    '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
+    '1B': 'Restrictions on Additions etc to the roof of a dwellinghouse e.g. Dormers',
+    '1C': 'Restrictions on Any other alterations to a roof of a dwellinghouse',
+    '1D': 'Restrictions on Porches',
+    '1E': 'Restrictions on Buildings etc incidental to the enjoyment of a dwellinghouse e.g. Outbuildings',
+    '1F': 'Restrictions on Hard surfaces incidental to the enjoyment of a dwellinghouse',
+    '1G': 'Restrictions on Chimneys, flues etc on a dwellinghouse',
+    '1H': 'Restrictions on Microwave antenna on a dwellinghouse e.g. Satellite dishes',
+    '2A': 'Restrictions on Gates, fences, walls etc',
+    '2B': 'Restrictions on Means of access to a highway e.g. driveways',
+    '2C': 'Restrictions on Exterior painting',
+    '2D': 'Restrictions on Electrical outlet for recharging vehicles',
+    '2E': 'Restrictions on Electrical upstand for recharging vehicles',
+    '2F': 'Restrictions on Closed circuit television cameras – CCTV',
+    '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
+    '3L': 'Restrictions on Small Houses in Multiple Occupation (HMOs) to dwellinghouses and vice versa'
+};
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-
-<script>
-    const mainMap = L.map('map').setView([51.505, -0.09], 10);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-    }).addTo(mainMap);
-
-    let article4Layer;
-    let article4Data; // Store the loaded Article 4 GeoJSON data
-
-    // Define the meaning of Article 4 codes manually
-    const article4CodeMeanings = {
-        '3L': 'Restrictions for HMOs conversion',
-        // Add more codes as needed
-       '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
-        '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
-        '1B': 'Restrictions on Additions etc to the roof of a dwellinghouse e.g. Dormers',
-        '1C': 'Restrictions on Any other alterations to a roof of a dwellinghouse',
-        '1D': 'Restrictions on Porches',
-        '1E': 'Restrictions on Buildings etc incidental to the enjoyment of a dwellinghouse e.g. Outbuildings',
-        '1F': 'Restrictions on Hard surfaces incidental to the enjoyment of a dwellinghouse',
-        '1G': 'Restrictions on Chimneys, flues etc on a dwellinghouse',
-        '1H': 'Restrictions on Microwave antenna on a dwellinghouse e.g. Satellite dishes',
-        '2A': 'Restrictions on Gates, fences, walls etc',
-        '2B': 'Restrictions on Means of access to a highway e.g. driveways,
-        '2C': 'Restrictions on Exterior painting',
-        '2D': 'Restrictions on Electrical outlet for recharging vehicles',
-        '2E': 'Restrictions on Electrical upstand for recharging vehicles',
-        '2F': 'Restrictions on Closed circuit television cameras – CCTV',
-        '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
-        // Add other codes and their meanings here
-    };
-
-    // Fetch and load the GeoJSON layers, including Article 4 data
-    function loadGeoJSON(url, color, name) {
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                const layer = L.geoJSON(data, {
-                    style: function () {
-                        return { color: color, weight: 2, fillOpacity: 0.5 };
-                    }
-                }).addTo(mainMap);
-
-                if (name === 'Article 4 Direction') {
-                    article4Layer = layer; // Save Article 4 layer
-                    article4Data = data; // Store the data globally
-                }
-
-                const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
-                legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
-                document.getElementById('legend').appendChild(legendItem);
-            })
-            .catch(error => console.error('Error loading GeoJSON:', error));
+// Function to display restrictions based on codes
+function getArticle4Restrictions(codes) {
+    if (!codes) {
+        return "Article 4 Direction";
     }
 
-    // Load Article 4 and other layers
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
-    loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
+    let codeList = codes.split('-');
+    let restrictions = codeList.map(code => article4Codes[code.trim()] || "Unknown Code");
+    return restrictions.join('<br>');
+}
 
-    // Search function for postcode
-    async function searchPostcode() {
-        const postcode = document.getElementById('postcode').value;
-        try {
-            const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
-            const data = await response.json();
-
-            if (data.status === 200) {
-                const { latitude, longitude } = data.result;
-                mainMap.setView([latitude, longitude], 13);
-
-                const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`);
-                marker.openPopup();
-
-                // Check if the postcode falls within an Article 4 polygon
-                if (article4Data) {
-                    checkInArticle4Area(latitude, longitude, marker);
-                }
-            } else {
-                alert('Postcode not found');
-            }
-        } catch (error) {
-            console.error('Error fetching postcode:', error);
-        }
-    }
-
-    // Check if a point is inside an Article 4 polygon
-    function checkInArticle4Area(lat, lng, marker) {
-        const point = turf.point([lng, lat]);
-
-        let foundArea = null;
-        for (const feature of article4Data.features) {
-            const polygon = feature.geometry;
-            if (turf.booleanPointInPolygon(point, polygon)) {
-                foundArea = feature;
-                break;
-            }
-        }
-
-        if (foundArea) {
-            const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
-            const restrictions = getRestrictionsFromCodes(pdRights);
-            marker.bindPopup(`Postcode is in an Article 4 area.<br><br>${restrictions}`).openPopup();
-        } else {
-            marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
-        }
-    }
-
-    // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes) {
-        if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
-
-        // Split the codes if there are multiple, separated by hyphens
-        const codeArray = codes.split('-');
-        let restrictions = '';
-
-        codeArray.forEach(code => {
-            const meaning = article4CodeMeanings[code] || `Unknown restriction for code ${code}`;
-            restrictions += `${meaning}<br>`; // Add each restriction on a new line
+// Load the GeoJSON for Article 4 areas
+$.getJSON('path/to/your/geojson/file.geojson', function(data) {
+  var article4Layer = L.geoJson(data, {
+    onEachFeature: function (feature, layer) {
+        layer.bindPopup(function (layer) {
+            var codes = feature.properties['permitted-development-rights'];
+            var restrictions = getArticle4Restrictions(codes);
+            return restrictions;
         });
-
-        return restrictions;
     }
-</script>
+  }).addTo(map);
+});
 
-</body>
-</html>
+// Function to find postcode and display Article 4 restrictions
+function searchPostcode(postcode) {
+    // Use a geocoding API to get the location of the postcode
+    $.getJSON(`https://nominatim.openstreetmap.org/search?format=json&q=${postcode}`, function(data) {
+        if (data.length > 0) {
+            var lat = data[0].lat;
+            var lon = data[0].lon;
+            
+            var latLng = L.latLng(lat, lon);
+            
+            // Set map view to the postcode location
+            map.setView(latLng, 16);
+            
+            // Add a marker at the postcode location
+            var marker = L.marker(latLng).addTo(map);
+            
+            // Check if the postcode falls within any Article 4 areas
+            var found = false;
+            article4Layer.eachLayer(function(layer) {
+                if (layer.getBounds().contains(latLng)) {
+                    var codes = layer.feature.properties['permitted-development-rights'];
+                    var restrictions = getArticle4Restrictions(codes);
+                    marker.bindPopup(restrictions).openPopup();
+                    found = true;
+                }
+            });
+            
+            if (!found) {
+                marker.bindPopup("No Article 4 restrictions at this location.").openPopup();
+            }
+        } else {
+            alert("Postcode not found.");
+        }
+    });
+}
+
+// Add event listener to the postcode search form
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var postcode = document.getElementById('postcodeInput').value;
+    searchPostcode(postcode);
+});
