@@ -114,6 +114,9 @@
                 legendItem.className = 'legend-item';
                 legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
                 document.getElementById('legend').appendChild(legendItem);
+                
+                // Log for debugging
+                console.log(`Loaded layer for: ${name}`, data);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
@@ -154,36 +157,41 @@
         let popupContent = `You are here.`;
 
         // Debugging: Log the loaded data
-        console.log("Green Belt Data:", greenBeltData);
-        console.log("AONB Data:", aonbData);
-        console.log("Conservation Area Data:", conservationData);
-        console.log("Article 4 Data:", article4Data);
+        console.log("Checking Green Belt Data:", greenBeltData);
+        console.log("Checking AONB Data:", aonbData);
+        console.log("Checking Conservation Area Data:", conservationData);
+        console.log("Checking Article 4 Data:", article4Data);
 
         // Check if the point is inside the Green Belt
         if (isPointInLayer(greenBeltData, point)) {
+            console.log("Point is in Green Belt");
             popupContent += `<br>Green Belt`;
         }
 
         // Check if the point is inside the Area of Outstanding Natural Beauty (AONB)
         if (isPointInLayer(aonbData, point)) {
+            console.log("Point is in AONB");
             popupContent += `<br>Area of Outstanding Natural Beauty`;
         }
 
         // Check if the point is inside a Conservation Area
         if (isPointInLayer(conservationData, point)) {
+            console.log("Point is in Conservation Area");
             popupContent += `<br>Conservation Area`;
         }
 
         // Check if the point is inside an Article 4 area
         const article4Content = checkInArticle4Area(lat, lng);
         if (article4Content) {
-            popupContent += `<br>${article4Content}`;
+            console.log("Point is in Article 4 area");
+            popupContent += `<br>Article 4 Direction: ${article4Content}`;
         }
 
-        marker.bindPopup(popupContent).openPopup();
+        // Update the marker's popup content
+        marker.setPopupContent(popupContent);
     }
 
-    // Helper function to check if a point is inside a specific layer's data
+    // Check if a point is inside any feature in a given GeoJSON layer
     function isPointInLayer(layerData, point) {
         if (!layerData || !layerData.features) return false;
 
