@@ -50,6 +50,12 @@
             font-size: 12px; /* Set font size to match the legend title */
             margin-top: 5px;
         }
+        .restriction-list {
+            font-size: 12px;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -77,6 +83,15 @@
 
     let article4Layer;
     let article4Data; // Store the loaded Article 4 GeoJSON data
+
+    // Mapping of Article 4 codes to their meanings
+    const article4Codes = {
+        'A': 'Restrictions on new building development.',
+        'B': 'Restrictions on certain types of renovations.',
+        'C': 'Limitations on converting properties.',
+        'D': 'Controls on changing the use of buildings.',
+        // Add more codes and their meanings as needed
+    };
 
     // Fetch and load the GeoJSON layers, including Article 4 data
     function loadGeoJSON(url, color, name) {
@@ -139,17 +154,27 @@
         const point = turf.point([lng, lat]);
 
         let foundArea = null;
+        let codes = []; // Array to hold codes
         for (const feature of article4Data.features) {
             const polygon = feature.geometry;
             if (turf.booleanPointInPolygon(point, polygon)) {
                 foundArea = feature;
+                // Assuming the 'codes' field is a string or array of codes
+                if (feature.properties.codes) {
+                    codes = feature.properties.codes.split(','); // Modify if needed based on actual data structure
+                }
                 break;
             }
         }
 
         if (foundArea) {
-            const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
-            marker.bindPopup(`Postcode is in an Article 4 area: ${pdRights}`).openPopup();
+            const meanings = codes.map(code => `<li>${code}: ${article4Codes[code.trim()] || 'Meaning not defined'}</li>`).join('');
+            const content = `
+                <div>
+                    <strong>Postcode is in an Article 4 area:</strong>
+                    <ul class="restriction-list">${meanings}</ul>
+                </div>`;
+            marker.bindPopup(content).openPopup();
         } else {
             marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
         }
