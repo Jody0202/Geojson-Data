@@ -19,11 +19,42 @@
         #search-container {
             position: absolute;
             top: 10px;
-            left: 10px; /* Adjusted position */
+            left: 1.7cm; /* Offset from the left boundary */
             background-color: white;
             padding: 10px;
             z-index: 1000; /* Ensure it stays above the map */
             border-radius: 5px;
+            width: 200px; /* Reduced width */
+        }
+
+        .search-input {
+            width: 150px; /* Reduced width by 2cm (~20px) */
+            padding: 5px;
+        }
+        #legend {
+            background: white;
+            line-height: 1.5;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+        .legend-title {
+            font-weight: bold;
+            font-size: 12px; /* Reduced font size for the title */
+        }
+        .legend-item {
+            font-size: 12px; /* Set font size to match the legend title */
+            margin-top: 5px;
+        }
+        .restriction-list {
+            font-size: 12px;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
         }
     </style>
 </head>
@@ -35,13 +66,18 @@
 </div>
 
 <div id="map"></div>
+<div id="legend">
+    <div class="legend-title">Legend</div>
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
 
 <script>
-    const mainMap = L.map('map').setView([51.505, -0.09], 10); // Default map view
+    // Initialize the map
+    const mainMap = L.map('map').setView([51.505, -0.09], 10);
 
+    // Load OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
@@ -71,7 +107,7 @@
         // Add more codes and their meanings as needed
     };
 
-    // Load the GeoJSON layers
+    // Function to load GeoJSON layers
     function loadGeoJSON(url, color, name) {
         fetch(url)
             .then(response => response.json())
@@ -81,22 +117,28 @@
                         return { color: color, weight: 2, fillOpacity: 0.5 };
                     }
                 }).addTo(mainMap);
-                
+
                 // Save Article 4 data for later access
                 if (name === 'Article 4 Direction') {
                     article4Data = data;
                 }
+
+                // Update legend
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item'; // Add class for legend items
+                legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
+                document.getElementById('legend').appendChild(legendItem);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
 
-    // Load all layers
+    // Load layers with their corresponding colors and names
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
     loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
 
-    // Search function for postcode
+    // Search function to center the map on postcode
     async function searchPostcode() {
         const postcode = document.getElementById('postcode').value;
         try {
