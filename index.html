@@ -70,8 +70,8 @@
             }).addTo(map);
         }
 
-        // Fetch the GeoJSON data for Article 4 (update with your correct URL or file path)
-        axios.get('path_to_your_geojson_file.geojson')
+        // Fetch the GeoJSON data for Article 4 (using the path that worked in previous code)
+        axios.get('your_previous_geojson_path_here')
             .then(response => {
                 const article4Data = response.data;
                 addArticle4Layer(article4Data);
@@ -84,7 +84,7 @@
         document.getElementById('searchButton').addEventListener('click', () => {
             const postcode = document.getElementById('postcodeInput').value;
 
-            // Fetch postcode coordinates via Postcodes.io API (adjust API or method if needed)
+            // Fetch postcode coordinates via Postcodes.io API
             axios
                 .get(`https://api.postcodes.io/postcodes/${postcode}`)
                 .then(response => {
