@@ -19,11 +19,30 @@
         #search-container {
             position: absolute;
             top: 10px;
-            left: 10px; /* Adjusted position */
+            left: 2cm; /* Offset from the left boundary */
             background-color: white;
             padding: 10px;
             z-index: 1000; /* Ensure it stays above the map */
             border-radius: 5px;
+        }
+        #legend {
+            background: white;
+            line-height: 1.5;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+        .legend-title {
+            font-weight: bold;
+            font-size: 12px; /* Reduced font size for the title */
+        }
+        .legend-item {
+            font-size: 12px; /* Set font size to match the legend title */
+            margin-top: 5px;
         }
         .restriction-list {
             font-size: 12px;
@@ -41,6 +60,9 @@
 </div>
 
 <div id="map"></div>
+<div id="legend">
+    <div class="legend-title">Legend</div>
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
@@ -71,6 +93,7 @@
         fetch(url)
             .then(response => response.json())
             .then(data => {
+                // Add the GeoJSON layer to the map
                 L.geoJSON(data, {
                     style: function () {
                         return { color: color, weight: 2, fillOpacity: 0.5 };
@@ -81,6 +104,12 @@
                 if (name === 'Article 4 Direction') {
                     article4Data = data;
                 }
+
+                // Update legend
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item'; // Add class for legend items
+                legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
+                document.getElementById('legend').appendChild(legendItem);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
@@ -108,6 +137,8 @@
                 // Check if the postcode falls within an Article 4 polygon
                 if (article4Data) {
                     checkInArticle4Area(latitude, longitude, marker);
+                } else {
+                    console.error('Article 4 data not loaded');
                 }
             } else {
                 alert('Postcode not found');
