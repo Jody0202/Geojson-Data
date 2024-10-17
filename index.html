@@ -81,23 +81,11 @@
 
     // Mapping of Article 4 codes to their meanings
     const article4Codes = {
-        '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
-        '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
-        '1B': 'Restrictions on Additions etc to the roof of a dwellinghouse e.g. Dormers',
-        '1C': 'Restrictions on Any other alterations to a roof of a dwellinghouse',
-        '1D': 'Restrictions on Porches',
-        '1E': 'Restrictions on Buildings etc incidental to the enjoyment of a dwellinghouse e.g. Outbuildings',
-        '1F': 'Restrictions on Hard surfaces incidental to the enjoyment of a dwellinghouse',
-        '1G': 'Restrictions on Chimneys, flues etc on a dwellinghouse',
-        '1H': 'Restrictions on Microwave antenna on a dwellinghouse e.g. Satellite dishes',
-        '2A': 'Restrictions on Gates, fences, walls etc',
-        '2B': 'Restrictions on Means of access to a highway e.g. driveways,
-        '2C': 'Restrictions on Exterior painting',
-        '2D': 'Restrictions on Electrical outlet for recharging vehicles',
-        '2E': 'Restrictions on Electrical upstand for recharging vehicles',
-        '2F': 'Restrictions on Closed circuit television cameras – CCTV',
-        '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
-        '3L': 'Restrictions on Small Houses in Multiple Occupation (HMOs) to dwellinghouses and vice versa',
+        'A': 'Restrictions on new building development.',
+        'B': 'Restrictions on certain types of renovations.',
+        'C': 'Limitations on converting properties.',
+        'D': 'Controls on changing the use of buildings.',
+        '3L': 'Special conditions for specific types of development.',
         // Add more codes and their meanings as needed
     };
 
@@ -177,14 +165,13 @@
         }
 
         if (foundArea) {
-            // Debugging logs
             console.log('Found Article 4 area:', foundArea); // Log the found area
             
             // Check if the property exists
             if (foundArea.properties.permitted_development_rights) {
                 // Extract the codes from the property
                 const codes = foundArea.properties.permitted_development_rights.split(',').map(code => code.trim());
-                const meanings = codes.map(code => `<li>${code}: ${article4Codes[code] || 'Meaning not defined'}</li>`).join('');
+                const meanings = codes.map(code => `<li>${code}: ${article4Codes[code] || 'Article 4 Direction only'}</li>`).join('');
                 const content = `
                     <div>
                         <strong>Postcode is in an Article 4 area:</strong>
@@ -193,7 +180,7 @@
                 marker.bindPopup(content).openPopup();
             } else {
                 console.log('No permitted development rights found for this area.'); // Debug log
-                marker.bindPopup('No permitted development rights found for this area.').openPopup();
+                marker.bindPopup('Article 4 Direction only').openPopup();
             }
         } else {
             marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
