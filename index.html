@@ -215,10 +215,21 @@
             const areaDescriptions = areaTypes.join(', ');
             marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
 
-            // Display only Article 4 restrictions if found
+            // Display Article 4 restrictions with codes
             if (article4Result) {
-                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights'], article4Result.properties['Note']);
-                showRestrictionsInOverlay(restrictions);
+                const restrictionCodes = article4Result.properties['permitted-development-rights'] || "None given";
+                const restrictionOutput = `Restriction code: ${restrictionCodes}`;
+
+                // Check if restrictions exist; if not, fallback to Notes
+                let restrictionsInfo = restrictionOutput;
+                if (restrictionCodes === "None given") {
+                    const notes = article4Result.properties['Notes'];
+                    restrictionsInfo = notes && notes.trim() !== "" 
+                        ? `<h3>Article 4 Direction</h3><p>${notes}</p>` 
+                        : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
+                }
+
+                showRestrictionsInOverlay(restrictionsInfo);
             }
         } else {
             marker.bindPopup(`You are not in a restricted area.`).openPopup();
@@ -234,20 +245,6 @@
             }
         }
         return null; // Not found in this area
-    }
-
-    // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes, note) {
-        if (!codes || codes === "None given") {
-            if (note && note.trim() !== "") {
-                return `<h3>Article 4 Direction</h3><p>${note}</p>`;
-            }
-            return `<h3>Article 4 Direction</h3><p>No further information.</p>`;
-        }
-
-        const codeArray = codes.split(';');
-        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
-        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
     // Show restrictions in a full-screen overlay
