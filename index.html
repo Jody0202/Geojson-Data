@@ -80,6 +80,7 @@
 <div id="search-container">
     <input type="text" id="postcode" placeholder="Enter postcode" />
     <button onclick="searchPostcode()">Search</button>
+    <button onclick="getLocation()">Use My Location</button>
 </div>
 
 <div id="map"></div>
@@ -267,6 +268,51 @@
             }
         }
         return null; // Return null if the point is not in any area
+    }
+
+    // Function to get the user's current location
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition, showError);
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+
+    // Function to handle the position returned by the Geolocation API
+    function showPosition(position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        
+        // Set the map view to the user's location
+        mainMap.setView([latitude, longitude], 13);
+        
+        // Create a marker at the user's location
+        const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup("You are here: (Your Location)");
+        marker.openPopup();
+        
+        // Check if the user's location falls within any restricted areas
+        if (article4Data) {
+            checkInRestrictedAreas(latitude, longitude, marker);
+        }
+    }
+
+    // Function to handle errors when getting the location
+    function showError(error) {
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                alert("User denied the request for Geolocation.");
+                break;
+            case error.POSITION_UNAVAILABLE:
+                alert("Location information is unavailable.");
+                break;
+            case error.TIMEOUT:
+                alert("The request to get user location timed out.");
+                break;
+            case error.UNKNOWN_ERROR:
+                alert("An unknown error occurred.");
+                break;
+        }
     }
 </script>
 </body>
