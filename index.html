@@ -91,7 +91,7 @@
         '2E': 'Restrictions on Electrical upstand for recharging vehicles',
         '2F': 'Restrictions on Closed circuit television cameras – CCTV',
         '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
-        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion'
+        '3L': 'Restrictions on Small Houses in Multiple Occupation (HMOs) to dwellinghouses and vice versa'
     };
 
     // Fetch and load the GeoJSON layers, including Article 4 data
@@ -181,7 +181,7 @@
         let restrictions = '';
 
         codeArray.forEach(code => {
-            const meaning = article4CodeMeanings[code] || `Unknown restriction for code ${code}`;
+            const meaning = article4CodeMeanings[code.trim()] || `Unknown restriction for code ${code.trim()}`;
             restrictions += `${meaning}<br>`; // Add each restriction on a new line
         });
 
