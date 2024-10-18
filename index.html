@@ -17,12 +17,12 @@
         #search-container {
             position: absolute;
             top: 10px;
-            left: 20px;
+            left: 1.7cm;
             background-color: white;
             padding: 10px;
             z-index: 1000;
             border-radius: 5px;
-            width: 220px;
+            width: 200px;
         }
         .search-input {
             width: 150px;
@@ -106,7 +106,9 @@
 
     let article4Layer;
     let article4Data; // Store the loaded Article 4 GeoJSON data
+    let otherLayersData = []; // Store other layer data
 
+    // Define the meaning of Article 4 codes manually
     const article4CodeMeanings = {
         '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
         '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
@@ -142,6 +144,8 @@
                 if (name === 'Article 4 Direction') {
                     article4Layer = layer; // Save Article 4 layer
                     article4Data = data; // Store the data globally
+                } else {
+                    otherLayersData.push({ name: name, data: data }); // Store other layers data
                 }
 
                 const legendItem = document.createElement('div');
@@ -152,7 +156,7 @@
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
 
-    // Load layers (e.g., Article 4, Green Belt, Conservation)
+    // Load Article 4 and other layers
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
     loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
@@ -172,9 +176,9 @@
                 const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`);
                 marker.openPopup();
 
-                // Check if the postcode falls within an Article 4 polygon
+                // Check if the postcode falls within an Article 4 polygon or any other restricted area
                 if (article4Data) {
-                    checkInArticle4Area(latitude, longitude, marker);
+                    checkInRestrictedAreas(latitude, longitude, marker);
                 }
             } else {
                 alert('Postcode not found');
@@ -184,61 +188,80 @@
         }
     }
 
-    // Check if a point is inside an Article 4 polygon
-    function checkInArticle4Area(lat, lon, marker) {
+    // Check if a point is inside any restricted area
+    function checkInRestrictedAreas(lat, lon, marker) {
         const point = turf.point([lon, lat]);
-        let foundArea = null;
+        let foundAreas = [];
+        let areaTypes = [];
 
-        for (const feature of article4Data.features) {
+        // Check Article 4 area
+        const article4Result = checkInArea(point, article4Data);
+        if (article4Result) {
+            foundAreas.push(article4Result);
+            areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
+        }
+
+        // Check other layers
+        otherLayersData.forEach(layer => {
+            const result = checkInArea(point, layer.data);
+            if (result) {
+                foundAreas.push(result);
+                areaTypes.push(layer.name); // Include other layer name
+            }
+        });
+
+        // Prepare the output for the marker popup
+        if (foundAreas.length > 0) {
+            const areaDescriptions = areaTypes.join(', ');
+            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
+
+            // Display only Article 4 restrictions if found
+            if (article4Result) {
+                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights'], article4Result.properties['Note']);
+                showRestrictionsInOverlay(restrictions);
+            }
+        } else {
+            marker.bindPopup(`You are not in a restricted area.`).openPopup();
+        }
+    }
+
+    // Check if a point is inside any polygon in the given GeoJSON data
+    function checkInArea(point, geojson) {
+        for (const feature of geojson.features) {
             const polygon = feature.geometry;
             if (turf.booleanPointInPolygon(point, polygon)) {
-                foundArea = feature;
-                break;
+                return feature; // Return the first matching area
             }
         }
-
-        if (foundArea) {
-            const pdRights = foundArea.properties['permitted-development-rights'] || '';
-            const notes = foundArea.properties['Notes'] || '';
-            const restrictions = getRestrictionsFromCodes(pdRights, notes);
-            showRestrictionsInOverlay(restrictions);
-            marker.bindPopup(`You are located in: Article 4 Direction.`).openPopup();
-        } else {
-            marker.bindPopup(`You are not in an Article 4 area.`).openPopup();
-        }
+        return null; // Not found in this area
     }
 
-    // Convert 'permitted-development-rights' codes into descriptions, fallback to 'Notes' if empty
-    function getRestrictionsFromCodes(codes, notes) {
-        if (codes.trim()) {
-            return codes.splitHere is the continuation and completion of the map-based web application script. It includes the **functionality to handle postcode searches** and **restrictions from Article 4 Directions** with a fallback to **Notes** if no development rights are listed.
-
-```html
-    // Convert 'permitted-development-rights' codes into descriptions, fallback to 'Notes' if empty
-    function getRestrictionsFromCodes(codes, notes) {
-        if (codes.trim()) {
-            return codes.split(',').map(code => {
-                return article4CodeMeanings[code.trim()] || `Unknown restriction code: ${code.trim()}`;
-            }).join('<br>');
-        } else {
-            return notes || 'No specific restrictions listed.';
+    // Convert the codes in 'permitted-development-rights' into their descriptions
+    function getRestrictionsFromCodes(codes, note) {
+        if (!codes || codes === "None given") {
+            if (note && note.trim() !== "") {
+                return `<h3>Article 4 Direction</h3><p>${note}</p>`;
+            }
+            return `<h3>Article 4 Direction</h3><p>No further information.</p>`;
         }
+
+        const codeArray = codes.split(';');
+        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
+        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
-    // Show the restrictions in a popup overlay
+    // Show restrictions in a full-screen overlay
     function showRestrictionsInOverlay(restrictions) {
         const overlay = document.getElementById('popup-overlay');
-        const popupContent = document.getElementById('popup-content');
-        popupContent.innerHTML = `<strong>Restrictions:</strong><br>${restrictions}`;
-        overlay.style.display = 'flex';
+        const content = document.getElementById('popup-content');
+        content.innerHTML = restrictions; // Set the restrictions in the overlay
+        overlay.style.display = 'flex'; // Show the overlay
     }
 
     // Close the popup overlay
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
-
 </script>
-
 </body>
 </html>
