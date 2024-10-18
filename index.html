@@ -17,7 +17,7 @@
         #search-container {
             position: absolute;
             top: 10px;
-            left: 10px; /* Adjusted to maintain appearance */
+            left: 1.7cm;
             background-color: white;
             padding: 10px;
             z-index: 1000;
@@ -45,6 +45,33 @@
         .legend-item {
             margin-top: 5px;
         }
+        #popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 1001; /* Ensure it's above everything else */
+        }
+        #popup-restrictions {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%; /* Responsive width */
+            max-height: 80vh; /* Allow scrolling if content exceeds this height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            font-size: 12px; /* Adjust font size for mobile */
+        }
+        #close-popup {
+            cursor: pointer;
+            font-weight: bold;
+            text-align: right;
+            margin-bottom: 10px; /* Space between close button and content */
+        }
     </style>
 </head>
 <body>
@@ -59,9 +86,9 @@
     <div class="legend-title">Legend</div>
 </div>
 
-<div id="popup-overlay" style="display: none;">
-    <div id="popup-restrictions" style="background: white; border-radius: 8px; padding: 20px; width: 90%;">
-        <div id="close-popup" style="cursor: pointer; font-weight: bold; text-align: right;">X Close</div>
+<div id="popup-overlay">
+    <div id="popup-restrictions">
+        <div id="close-popup">X Close</div>
         <div id="popup-content"></div>
     </div>
 </div>
@@ -165,11 +192,13 @@
     function checkInRestrictedAreas(lat, lon, marker) {
         const point = turf.point([lon, lat]);
         let foundAreas = [];
+        let areaTypes = [];
 
         // Check Article 4 area
         const article4Result = checkInArea(point, article4Data);
         if (article4Result) {
             foundAreas.push(article4Result);
+            areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
         }
 
         // Check other layers
@@ -177,52 +206,53 @@
             const result = checkInArea(point, layer.data);
             if (result) {
                 foundAreas.push(result);
+                areaTypes.push(layer.name); // Include other layer name
             }
         });
 
         // Prepare the output for the marker popup
         if (foundAreas.length > 0) {
-            const restrictions = foundAreas.map(area => getRestrictionsFromCodes(area.properties.permitted_development_rights, area.properties.Notes)).join('<br>');
-            marker.bindPopup(`You are here: ${marker.getLatLng()}<br>${restrictions}`).openPopup();
+            const areaDescriptions = areaTypes.join(', ');
+            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
+
+            // Display only Article 4 restrictions if found
+            if (article4Result) {
+                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights']);
+                showRestrictionsInOverlay(restrictions);
+            }
         } else {
-            marker.bindPopup(`You are here: ${marker.getLatLng()}<br>No restrictions found.`).openPopup();
+            marker.bindPopup(`You are not in a restricted area.`).openPopup();
         }
     }
 
-    // Function to check if a point is in a GeoJSON area
-    function checkInArea(point, geojsonData) {
-        const features = geojsonData.features;
-
-        for (let feature of features) {
-            const polygon = turf.polygon(feature.geometry.coordinates);
+    // Check if a point is inside any polygon in the given GeoJSON data
+    function checkInArea(point, geojson) {
+        for (const feature of geojson.features) {
+            const polygon = feature.geometry;
             if (turf.booleanPointInPolygon(point, polygon)) {
-                return feature; // Return the feature if point is inside
+                return feature; // Return the first matching area
             }
         }
-        return null; // Return null if not found
+        return null; // Not found in this area
     }
 
-    // Get restrictions from codes and notes
-    function getRestrictionsFromCodes(codes, notes) {
-        if (!codes || codes === 'None given') {
-            return notes ? `<h3>Article 4 Direction</h3><p>${notes}</p>` : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
-        }
-
+    // Convert the codes in 'permitted-development-rights' into their descriptions
+    function getRestrictionsFromCodes(codes) {
+        if (!codes) return 'No associated restrictions.';
         const codeArray = codes.split(';');
-        const descriptions = [];
-
-        codeArray.forEach(code => {
-            if (article4CodeMeanings[code.trim()]) {
-                descriptions.push(article4CodeMeanings[code.trim()]);
-            } else {
-                descriptions.push(`Restriction code: ${code.trim()}`); // Show unknown code
-            }
-        });
-
+        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
         return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
-    // Popup close functionality
+    // Show restrictions in a full-screen overlay
+    function showRestrictionsInOverlay(restrictions) {
+        const overlay = document.getElementById('popup-overlay');
+        const content = document.getElementById('popup-content');
+        content.innerHTML = restrictions; // Set the restrictions in the overlay
+        overlay.style.display = 'flex'; // Show the overlay
+    }
+
+    // Close the popup overlay
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
