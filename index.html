@@ -38,11 +38,9 @@
             position: absolute;
             bottom: 10px;
             left: 10px;
-            font-size: 12px; /* Reduced font size of legend */
         }
         .legend-title {
             font-weight: bold;
-            font-size: 12px; /* Reduced font size of legend title */
         }
         .legend-item {
             margin-top: 5px;
@@ -201,6 +199,13 @@
         if (article4Result) {
             foundAreas.push(article4Result);
             areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
+
+            // Retrieve the notes information
+            const notes = article4Result.properties['notes'] || ""; // Adjusted to retrieve 'notes'
+            
+            // Get restrictions, passing the notes to the function
+            const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights'], notes);
+            showRestrictionsInOverlay(restrictions);
         }
 
         // Check other layers
@@ -208,61 +213,59 @@
             const result = checkInArea(point, layer.data);
             if (result) {
                 foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer names
+                areaTypes.push(layer.name); // Include other layer name
             }
         });
 
-        // Bind popup with found areas
+        // Prepare the output for the marker popup
         if (foundAreas.length > 0) {
             const areaDescriptions = areaTypes.join(', ');
             marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
-
-            // Display only Article 4 restrictions if found
-            if (article4Result) {
-                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights'], article4Result.properties['Notes']);
-                showRestrictionsInOverlay(restrictions);
-            }
         } else {
             marker.bindPopup(`You are not in a restricted area.`).openPopup();
         }
     }
 
-    // Check if a point is inside any polygon in the given GeoJSON data
-    function checkInArea(point, geojson) {
-        for (const feature of geojson.features) {
-            const polygon = feature.geometry;
-            if (turf.booleanPointInPolygon(point, polygon)) {
-                return feature; // Return the first matching area
-            }
-        }
-        return null; // Not found in this area
-    }
-
     // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes, notes) {
-        if (codes && codes.trim() !== '') {
-            const codeArray = codes.split(';');
-            const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
-            return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
-        } else if (notes && notes.trim() !== '') {
-            return `<h3>Notes</h3><p>${notes}</p>`;
-        } else {
-            return 'No further information.'; // Default message if nothing is found
+    function getRestrictionsFromCodes(codes, notes) { // Add notes parameter
+        if (!codes || codes.trim() === "None given") { // Check for blank or "None given"
+            return notes && notes.trim() !== '' ? 
+                `<h3>Article 4 Direction</h3><ul><li>${notes}</li></ul>` : 
+                `<h3>Article 4 Direction</h3><ul><li>No further information</li></ul>`;
         }
+
+        const codeArray = codes.split(';');
+        const descriptions = codeArray.map(code => {
+            if (article4CodeMeanings[code]) {
+                return article4CodeMeanings[code]; // Code found in dictionary
+            } else {
+                return `Unknown code: ${code}`; // Code not found
+            }
+        });
+
+        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
-    // Show restrictions in a full-screen overlay
+    // Show restrictions in the overlay
     function showRestrictionsInOverlay(restrictions) {
-        const overlay = document.getElementById('popup-overlay');
-        const content = document.getElementById('popup-content');
-        content.innerHTML = restrictions; // Set the restrictions in the overlay
-        overlay.style.display = 'flex'; // Show the overlay
+        document.getElementById('popup-content').innerHTML = restrictions;
+        document.getElementById('popup-overlay').style.display = 'flex'; // Show overlay
     }
 
     // Close the popup overlay
-    document.getElementById('close-popup').addEventListener('click', () => {
-        document.getElementById('popup-overlay').style.display = 'none';
+    document.getElementById('close-popup').addEventListener('click', function() {
+        document.getElementById('popup-overlay').style.display = 'none'; // Hide overlay
     });
+
+    // Function to check if a point is inside a GeoJSON area
+    function checkInArea(point, geojson) {
+        for (const feature of geojson.features) {
+            if (turf.booleanPointInPolygon(point, feature.geometry)) {
+                return feature; // Return the feature if the point is within the polygon
+            }
+        }
+        return null; // Return null if the point is not in any area
+    }
 </script>
 </body>
 </html>
