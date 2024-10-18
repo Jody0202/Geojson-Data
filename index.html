@@ -181,8 +181,11 @@
         // Debug: print the raw code string
         console.log("Raw permitted-development-rights codes:", codes);
 
-        // Split the codes if there are multiple, separated by hyphens or spaces
-        const codeArray = codes.split('-').map(code => code.trim()); // Trim each code
+        // Replace multiple possible delimiters (spaces, commas, slashes) with hyphens, then split
+        const normalizedCodes = codes.replace(/[\s,\/]+/g, '-');
+
+        // Split the codes by hyphen and trim each one
+        const codeArray = normalizedCodes.split('-').map(code => code.trim());
 
         let knownRestrictions = '';
         let unknownCodes = '';
