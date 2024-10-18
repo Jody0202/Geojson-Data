@@ -49,6 +49,36 @@
         .leaflet-popup-content {
             max-height: 300px; /* Limit the height */
             overflow-y: auto; /* Enable scrolling */
+            font-size: 14px; /* Set a smaller font size */
+            width: auto; /* Make the width responsive */
+            max-width: 90vw; /* Limit the max width to 90% of viewport width */
+        }
+        /* Add styling for full-screen overlay */
+        #popup-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            overflow-y: auto; /* Allow scrolling */
+            z-index: 2000;
+        }
+        #popup-content {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        #close-popup {
+            background: red;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -62,6 +92,14 @@
 <div id="map"></div>
 <div id="legend">
     <div class="legend-title">Legend</div>
+</div>
+
+<!-- Popup overlay for mobile -->
+<div id="popup-overlay">
+    <div id="popup-content">
+        <button id="close-popup">Close</button>
+        <div id="popup-restrictions"></div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -173,11 +211,25 @@
             console.log("Permitted development rights (raw string):", pdRights); // Debugging
 
             const restrictions = getRestrictionsFromCodes(pdRights);
-            marker.bindPopup(`Postcode is in an Article 4 area.<br><br>${restrictions}`).openPopup();
+            // Show restrictions in overlay for mobile
+            showRestrictionsInOverlay(restrictions);
         } else {
             marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
         }
     }
+
+    // Show restrictions in a full-screen overlay
+    function showRestrictionsInOverlay(restrictions) {
+        const overlay = document.getElementById('popup-overlay');
+        const content = document.getElementById('popup-restrictions');
+        content.innerHTML = restrictions; // Set the restrictions in the overlay
+        overlay.style.display = 'block'; // Show the overlay
+    }
+
+    // Close the popup overlay
+    document.getElementById('close-popup').addEventListener('click', () => {
+        document.getElementById('popup-overlay').style.display = 'none';
+    });
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
     function getRestrictionsFromCodes(codes) {
@@ -186,8 +238,8 @@
         // Debug: print the raw code string
         console.log("Raw permitted-development-rights codes:", codes);
 
-        // Normalize the codes by replacing multiple delimiters (spaces, commas, slashes, semicolons) with a single hyphen
-        const normalizedCodes = codes.replace(/[\s,\/;]+/g, '-').trim();
+        // Replace multiple delimiters (spaces, commas, slashes, etc.) with a hyphen, then split
+        const normalizedCodes = codes.replace(/[\s,\/]+/g, '-');
 
         // Split the codes by hyphen and trim each one
         const codeArray = normalizedCodes.split('-').map(code => code.trim());
