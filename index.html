@@ -178,14 +178,8 @@
     function getRestrictionsFromCodes(codes) {
         if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
 
-        // Debug: print the raw code string
-        console.log("Raw codes:", codes);
-
         // Split the codes if there are multiple, separated by hyphens or spaces
         const codeArray = codes.split('-').map(code => code.trim()); // Trim each code
-
-        // Debug: print the processed codes after splitting
-        console.log("Processed codes:", codeArray);
 
         let knownRestrictions = '';
         let unknownCodes = '';
@@ -199,10 +193,6 @@
             }
         });
 
-        // Debugging the output that should be rendered in the popup
-        console.log("Known restrictions:", knownRestrictions);
-        console.log("Unknown codes:", unknownCodes);
-
         let fullMessage = knownRestrictions || 'No known restrictions';
         if (unknownCodes) {
             fullMessage += `<br><strong>Unknown Codes:</strong><br>${unknownCodes}`;
@@ -212,5 +202,4 @@
     }
 </script>
 
-</body>
-</html>
+</
