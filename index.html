@@ -127,7 +127,7 @@
         '2E': 'Restrictions on Electrical upstand for recharging vehicles',
         '2F': 'Restrictions on Closed circuit television cameras – CCTV',
         '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
-        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion',
+        '3L': 'Restrictions on HMOs: You can\'t convert a house into shared housing without council permission. HMOs mean tenants rent rooms and share common areas.',
         '31B': 'Demolition of a gate, fence, or wall within a dwelling\'s curtilage that faces a highway, waterway, or open space'
     };
 
@@ -208,66 +208,79 @@
             const codes = article4Result.properties['permitted-development-rights'];
             const restrictions = getRestrictionsFromCodes(codes, notes);
             showRestrictionsInOverlay(restrictions); // Show restrictions in overlay
+        } else {
+            // Add a message if the postcode is not within an Article 4 area
+            foundAreas.push({
+                name: 'Article 4 Direction',
+                message: 'No Article 4 restrictions for this area.'
+            });
         }
 
-        // Check other layers
-        otherLayersData.forEach(layer => {
-            const result = checkInArea(point, layer.data);
+        // Check other layers (Green Belt, Conservation Area, etc.)
+        otherLayersData.forEach(layerData => {
+            const result = checkInArea(point, layerData.data);
             if (result) {
                 foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer name
+                areaTypes.push(layerData.name); // Add the type to area types
             }
         });
 
-        // Prepare the output for the marker popup
-        if (foundAreas.length > 0) {
-            const areaDescriptions = areaTypes.join(', ');
-            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
+        if (foundAreas.length === 0) {
+            marker.bindPopup("No restrictions found at this location.").openPopup();
+        }
+    }
+
+    // Function to check if the point is within a GeoJSON area
+    function checkInArea(point, geojsonData) {
+        let foundFeature = null;
+
+        turf.featureEach(geojsonData, function (feature) {
+            if (turf.booleanPointInPolygon(point, feature)) {
+                foundFeature = feature;
+            }
+        });
+
+        return foundFeature;
+    }
+
+    // Function to get restrictions from codes and notes
+    function getRestrictionsFromCodes(codes, notes) {
+        if (!codes || codes.length === 0) {
+            return notes ? notes : "Article 4 Direction: No further information";
+        }
+
+        let restrictions = "";
+        const codeList = codes.split(',').map(code => code.trim());
+        codeList.forEach(code => {
+            const meaning = article4CodeMeanings[code];
+            if (meaning) {
+                restrictions += `<li>${meaning}</li>`;
+            }
+        });
+
+        if (restrictions === "" && notes) {
+            return notes;
+        } else if (restrictions === "") {
+            return "Article 4 Direction: No further information";
         } else {
-            marker.bindPopup(`You are not in a restricted area.`).openPopup();
+            return `<ul>${restrictions}</ul>`;
         }
     }
 
-    // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes, notes) { // Add notes parameter
-        if (!codes || codes.trim() === "None given") { // Check for blank or "None given"
-            return notes && notes.trim() !== '' ? 
-                `<h3>Article 4 Direction</h3><ul><li>${notes}</li></ul>` : 
-                `<h3>Article 4 Direction</h3><ul><li>No further information</li></ul>`;
-        }
-
-        const codeArray = codes.split(';');
-        const descriptions = codeArray.map(code => {
-            if (article4CodeMeanings[code]) {
-                return article4CodeMeanings[code]; // Code found in dictionary
-            } else {
-                return `Unknown code: ${code}`; // Code not found
-            }
-        });
-
-        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
-    }
-
-    // Show restrictions in the overlay
+    // Function to show restrictions in the overlay
     function showRestrictionsInOverlay(restrictions) {
-        document.getElementById('popup-content').innerHTML = restrictions;
-        document.getElementById('popup-overlay').style.display = 'flex'; // Show overlay
+        const overlay = document.getElementById('popup-overlay');
+        const content = document.getElementById('popup-content');
+
+        content.innerHTML = restrictions;
+        overlay.style.display = 'flex'; // Show the overlay
     }
 
     // Close the popup overlay
-    document.getElementById('close-popup').addEventListener('click', function() {
-        document.getElementById('popup-overlay').style.display = 'none'; // Hide overlay
+    document.getElementById('close-popup').addEventListener('click', function () {
+        document.getElementById('popup-overlay').style.display = 'none';
     });
-
-    // Function to check if a point is inside a GeoJSON area
-    function checkInArea(point, geojson) {
-        for (const feature of geojson.features) {
-            if (turf.booleanPointInPolygon(point, feature.geometry)) {
-                return feature; // Return the feature if the point is within the polygon
-            }
-        }
-        return null; // Return null if the point is not in any area
-    }
 </script>
+
 </body>
 </html>
