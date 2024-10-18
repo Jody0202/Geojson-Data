@@ -164,7 +164,12 @@
 
     // Search function for postcode
     async function searchPostcode() {
-        const postcode = document.getElementById('postcode').value;
+        const postcode = document.getElementById('postcode').value.trim();
+        if (!postcode) {
+            alert("Please enter a postcode.");
+            return;
+        }
+
         try {
             const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
             const data = await response.json();
@@ -182,6 +187,7 @@
                 // Check if the postcode falls within an Article 4 polygon
                 if (article4Data) {
                     const inArticle4 = checkInArticle4Area(latitude, longitude);
+                    console.log("Article 4 Check:", inArticle4);
                     if (inArticle4) {
                         legendAreas.push("Article 4 Direction");
                         article4Restrictions = getRestrictionsFromCodes(inArticle4); // Get restrictions
@@ -199,9 +205,9 @@
                     legendAreas.push("Conservation Area");
                 }
 
-                // Update the marker popup with area information
+                // Show areas in marker popup
                 if (legendAreas.length > 0) {
-                    marker.bindPopup(`You are here: ${postcode}<br>${legendAreas.join(', ')}`).openPopup();
+                    marker.bindPopup(`You are here: ${postcode}<br>Located in: ${legendAreas.join(', ')}`).openPopup();
                 }
 
                 // Show restrictions in the overlay if Article 4 restrictions exist
