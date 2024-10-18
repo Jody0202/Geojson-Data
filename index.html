@@ -178,14 +178,25 @@
 
         // Split the codes if there are multiple, separated by hyphens
         const codeArray = codes.split('-');
-        let restrictions = '';
+        let knownRestrictions = '';
+        let unknownCodes = '';
 
         codeArray.forEach(code => {
-            const meaning = article4CodeMeanings[code.trim()] || `Unknown restriction for code ${code.trim()}`;
-            restrictions += `${meaning}<br>`; // Add each restriction on a new line
+            const trimmedCode = code.trim();
+            const meaning = article4CodeMeanings[trimmedCode];
+            if (meaning) {
+                knownRestrictions += `${meaning}<br>`;
+            } else {
+                unknownCodes += `Unknown restriction for code ${trimmedCode}<br>`;
+            }
         });
 
-        return restrictions;
+        let fullMessage = knownRestrictions;
+        if (unknownCodes) {
+            fullMessage += `<br><strong>Note:</strong><br>${unknownCodes}`;
+        }
+
+        return fullMessage;
     }
 </script>
 
