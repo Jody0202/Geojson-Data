@@ -218,29 +218,23 @@
             // Display Article 4 restrictions with codes
             if (article4Result) {
                 const restrictionCodes = article4Result.properties['permitted-development-rights'] || "None given";
-                let restrictionOutput = `Restriction code: ${restrictionCodes}`;
+                let restrictionOutput;
 
-                // Interpret the restriction codes if they exist
+                // Check for restriction codes
                 if (restrictionCodes && restrictionCodes !== "None given") {
                     const codesArray = restrictionCodes.split(',').map(code => code.trim());
-                    const interpretedCodes = codesArray.map(code => {
-                        const meaning = article4CodeMeanings[code] || 'Meaning not provided';
-                        return `${code}: ${meaning}`;
-                    }).join('<br>'); // Line break for formatting
-
-                    restrictionOutput = `Restriction code:<br>${interpretedCodes}`;
-                }
-
-                // Check if restrictions exist; if not, fallback to Notes
-                let restrictionsInfo = restrictionOutput;
-                if (restrictionCodes === "None given") {
+                    const unknownCodes = codesArray.filter(code => !article4CodeMeanings[code]); // Filter out unknown codes
+                    if (unknownCodes.length > 0) {
+                        restrictionOutput = `You are located in: Article 4 Direction<br>Restriction code: ${unknownCodes.join(', ')}`;
+                    } else {
+                        restrictionOutput = `You are located in: Article 4 Direction`;
+                    }
+                } else {
                     const notes = article4Result.properties['Notes'];
-                    restrictionsInfo = notes && notes.trim() !== "" 
-                        ? `<h3>Article 4 Direction</h3><p>${notes}</p>` 
-                        : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
+                    restrictionOutput = `<h3>Article 4 Direction</h3><p>${notes && notes.trim() !== "" ? notes : "No further information."}</p>`;
                 }
 
-                showRestrictionsInOverlay(`<h3>Article 4 Direction</h3><p>${restrictionsInfo}</p>`);
+                showRestrictionsInOverlay(restrictionOutput);
             }
         } else {
             marker.bindPopup(`You are not in a restricted area.`).openPopup();
