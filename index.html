@@ -17,11 +17,33 @@
         #search-container {
             position: absolute;
             top: 10px;
-            left: 10px;
+            left: 1.7cm;
             background-color: white;
             padding: 10px;
             z-index: 1000;
             border-radius: 5px;
+            width: 200px;
+        }
+        .search-input {
+            width: 150px;
+            padding: 5px;
+        }
+        #legend {
+            background: white;
+            line-height: 1.5;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+        .legend-title {
+            font-weight: bold;
+        }
+        .legend-item {
+            margin-top: 5px;
         }
         #popup-overlay {
             position: fixed;
@@ -42,6 +64,7 @@
             width: 90%; /* Responsive width */
             max-height: 80vh; /* Allow scrolling if content exceeds this height */
             overflow-y: auto; /* Enable vertical scrolling */
+            font-size: 12px; /* Adjust font size for mobile */
         }
         #close-popup {
             cursor: pointer;
@@ -59,6 +82,9 @@
 </div>
 
 <div id="map"></div>
+<div id="legend">
+    <div class="legend-title">Legend</div>
+</div>
 
 <div id="popup-overlay">
     <div id="popup-restrictions">
@@ -85,20 +111,34 @@
     // Define the meaning of Article 4 codes manually
     const article4CodeMeanings = {
         '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
+        '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
         '1B': 'Restrictions on Additions etc to the roof of a dwellinghouse e.g. Dormers',
         '1C': 'Restrictions on Any other alterations to a roof of a dwellinghouse',
         '1D': 'Restrictions on Porches',
         '1E': 'Restrictions on Buildings etc incidental to the enjoyment of a dwellinghouse e.g. Outbuildings',
-        // Add more codes and descriptions as needed
+        '1F': 'Restrictions on Hard surfaces incidental to the enjoyment of a dwellinghouse',
+        '1G': 'Restrictions on Chimneys, flues etc on a dwellinghouse',
+        '1H': 'Restrictions on Microwave antenna on a dwellinghouse e.g. Satellite dishes',
+        '2A': 'Restrictions on Gates, fences, walls etc',
+        '2B': 'Restrictions on Means of access to a highway e.g. driveways',
+        '2C': 'Restrictions on Exterior painting',
+        '2D': 'Restrictions on Electrical outlet for recharging vehicles',
+        '2E': 'Restrictions on Electrical upstand for recharging vehicles',
+        '2F': 'Restrictions on Closed circuit television cameras – CCTV',
+        '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
+        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion',
+        '31B': 'Demolition of a gate, fence, or wall within a dwelling\'s curtilage that faces a highway, waterway, or open space'
     };
 
     // Fetch and load the GeoJSON layers, including Article 4 data
-    function loadGeoJSON(url, name) {
+    function loadGeoJSON(url, color, name) {
         fetch(url)
             .then(response => response.json())
             .then(data => {
                 const layer = L.geoJSON(data, {
-                    style: { color: 'blue', weight: 2, fillOpacity: 0.5 }
+                    style: function () {
+                        return { color: color, weight: 2, fillOpacity: 0.5 };
+                    }
                 }).addTo(mainMap);
 
                 if (name === 'Article 4 Direction') {
@@ -107,15 +147,20 @@
                 } else {
                     otherLayersData.push({ name: name, data: data }); // Store other layers data
                 }
+
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
+                document.getElementById('legend').appendChild(legendItem);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
     }
 
-    // Load Article 4 Direction layer and other layers
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'Article 4 Direction');
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'Area of Outstanding Natural Beauty');
-    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'Green Belt');
-    loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'Conservation Area');
+    // Load Article 4 and other layers
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
+    loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
 
     // Search function for postcode
     async function searchPostcode() {
@@ -127,10 +172,11 @@
             if (data.status === 200) {
                 const { latitude, longitude } = data.result;
                 mainMap.setView([latitude, longitude], 13);
+
                 const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`);
                 marker.openPopup();
 
-                // Check if the postcode falls within an Article 4 polygon
+                // Check if the postcode falls within an Article 4 polygon or any other restricted area
                 if (article4Data) {
                     checkInRestrictedAreas(latitude, longitude, marker);
                 }
@@ -171,13 +217,11 @@
 
             // Display only Article 4 restrictions if found
             if (article4Result) {
-                const codes = article4Result.properties['permitted-development-rights'];
-                const notes = article4Result.properties['Note'] || '';
-                const restrictions = getRestrictionsFromCodes(codes, notes);
+                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights']);
                 showRestrictionsInOverlay(restrictions);
             }
         } else {
-            marker.bindPopup('You are not in a restricted area.').openPopup();
+            marker.bindPopup(`You are not in a restricted area.`).openPopup();
         }
     }
 
@@ -193,22 +237,10 @@
     }
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes, notes) {
-        if (!codes || codes === 'None given') {
-            return notes ? `<h3>Article 4 Direction</h3><p>${notes}</p>` : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
-        }
-
+    function getRestrictionsFromCodes(codes) {
+        if (!codes) return 'No associated restrictions.';
         const codeArray = codes.split(';');
-        const descriptions = [];
-
-        codeArray.forEach(code => {
-            if (article4CodeMeanings[code]) {
-                descriptions.push(article4CodeMeanings[code]);
-            } else {
-                descriptions.push(`Restriction code: ${code}`); // Show unknown code
-            }
-        });
-
+        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
         return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
@@ -222,9 +254,8 @@
 
     // Close the popup overlay
     document.getElementById('close-popup').addEventListener('click', () => {
-        document.getElementById('popup-overlay').style.display = 'none'; // Hide the overlay when closing
+        document.getElementById('popup-overlay').style.display = 'none';
     });
 </script>
-
 </body>
 </html>
