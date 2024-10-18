@@ -192,11 +192,13 @@
     function checkInRestrictedAreas(lat, lon, marker) {
         const point = turf.point([lon, lat]);
         let foundAreas = [];
+        let areaTypes = [];
 
         // Check Article 4 area
         const article4Result = checkInArea(point, article4Data);
         if (article4Result) {
             foundAreas.push(article4Result);
+            areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
         }
 
         // Check other layers
@@ -204,17 +206,22 @@
             const result = checkInArea(point, layer.data);
             if (result) {
                 foundAreas.push(result);
+                areaTypes.push(layer.name); // Include other layer name
             }
         });
 
+        // Prepare the output for the marker popup
         if (foundAreas.length > 0) {
-            const restrictions = foundAreas.map(area => {
-                const pdRights = area.properties['permitted-development-rights'] || ''; // Adjust according to your data structure
-                return getRestrictionsFromCodes(pdRights);
-            }).join('<hr>'); // Separate restrictions with a horizontal line
+            const areaDescriptions = areaTypes.join(', ');
+            marker.bindPopup(`You are in a restricted area: ${areaDescriptions}`).openPopup();
 
-            showRestrictionsInOverlay(restrictions); // Show the restrictions in the overlay
-            marker.bindPopup(`You are in a restricted area.`).openPopup();
+            // Display only Article 4 restrictions if found, otherwise note conservation areas
+            if (article4Result) {
+                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights']);
+                showRestrictionsInOverlay(restrictions);
+            } else if (areaTypes.includes('Conservation Area')) {
+                marker.bindPopup(`You are located in a Conservation Area.`).openPopup();
+            }
         } else {
             marker.bindPopup(`You are not in a restricted area.`).openPopup();
         }
@@ -236,7 +243,7 @@
         if (!codes) return 'No associated restrictions.';
         const codeArray = codes.split(';');
         const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
-        return `<h3>Restrictions</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
+        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
     // Show restrictions in a full-screen overlay
