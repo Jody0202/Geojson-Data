@@ -38,6 +38,7 @@
             position: absolute;
             bottom: 10px;
             left: 10px;
+            font-size: 12px; /* Set legend font size to match popup */
         }
         .legend-title {
             font-weight: bold;
@@ -203,9 +204,10 @@
             // Retrieve the notes information
             const notes = article4Result.properties['notes'] || ""; // Adjusted to retrieve 'notes'
             
-            // Get restrictions, passing the notes to the function
-            const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights'], notes);
-            showRestrictionsInOverlay(restrictions);
+            // Get restrictions based on permitted-development-rights
+            const codes = article4Result.properties['permitted-development-rights'];
+            const restrictions = getRestrictionsFromCodes(codes, notes);
+            showRestrictionsInOverlay(restrictions); // Show restrictions in overlay
         }
 
         // Check other layers
