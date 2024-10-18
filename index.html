@@ -213,14 +213,12 @@
         // Prepare the output for the marker popup
         if (foundAreas.length > 0) {
             const areaDescriptions = areaTypes.join(', ');
-            marker.bindPopup(`You are in a restricted area: ${areaDescriptions}`).openPopup();
+            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
 
-            // Display only Article 4 restrictions if found, otherwise note conservation areas
+            // Display only Article 4 restrictions if found
             if (article4Result) {
                 const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights']);
                 showRestrictionsInOverlay(restrictions);
-            } else if (areaTypes.includes('Conservation Area')) {
-                marker.bindPopup(`You are located in a Conservation Area.`).openPopup();
             }
         } else {
             marker.bindPopup(`You are not in a restricted area.`).openPopup();
