@@ -17,7 +17,7 @@
         #search-container {
             position: absolute;
             top: 10px;
-            left: 1.7cm;
+            left: 10px; /* Adjusted to maintain appearance */
             background-color: white;
             padding: 10px;
             z-index: 1000;
@@ -45,33 +45,6 @@
         .legend-item {
             margin-top: 5px;
         }
-        #popup-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: none; /* Initially hidden */
-            justify-content: center;
-            align-items: center;
-            z-index: 1001; /* Ensure it's above everything else */
-        }
-        #popup-restrictions {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            width: 90%; /* Responsive width */
-            max-height: 80vh; /* Allow scrolling if content exceeds this height */
-            overflow-y: auto; /* Enable vertical scrolling */
-            font-size: 12px; /* Adjust font size for mobile */
-        }
-        #close-popup {
-            cursor: pointer;
-            font-weight: bold;
-            text-align: right;
-            margin-bottom: 10px; /* Space between close button and content */
-        }
     </style>
 </head>
 <body>
@@ -86,9 +59,9 @@
     <div class="legend-title">Legend</div>
 </div>
 
-<div id="popup-overlay">
-    <div id="popup-restrictions">
-        <div id="close-popup">X Close</div>
+<div id="popup-overlay" style="display: none;">
+    <div id="popup-restrictions" style="background: white; border-radius: 8px; padding: 20px; width: 90%;">
+        <div id="close-popup" style="cursor: pointer; font-weight: bold; text-align: right;">X Close</div>
         <div id="popup-content"></div>
     </div>
 </div>
@@ -192,13 +165,11 @@
     function checkInRestrictedAreas(lat, lon, marker) {
         const point = turf.point([lon, lat]);
         let foundAreas = [];
-        let areaTypes = [];
 
         // Check Article 4 area
         const article4Result = checkInArea(point, article4Data);
         if (article4Result) {
             foundAreas.push(article4Result);
-            areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
         }
 
         // Check other layers
@@ -206,7 +177,6 @@
             const result = checkInArea(point, layer.data);
             if (result) {
                 foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer name
             }
         });
 
@@ -234,7 +204,7 @@
 
     // Get restrictions from codes and notes
     function getRestrictionsFromCodes(codes, notes) {
-        if (codes === 'None given') {
+        if (!codes || codes === 'None given') {
             return notes ? `<h3>Article 4 Direction</h3><p>${notes}</p>` : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
         }
 
@@ -242,10 +212,10 @@
         const descriptions = [];
 
         codeArray.forEach(code => {
-            if (article4CodeMeanings[code]) {
-                descriptions.push(article4CodeMeanings[code]);
+            if (article4CodeMeanings[code.trim()]) {
+                descriptions.push(article4CodeMeanings[code.trim()]);
             } else {
-                descriptions.push(`Restriction code: ${code}`); // Show unknown code
+                descriptions.push(`Restriction code: ${code.trim()}`); // Show unknown code
             }
         });
 
