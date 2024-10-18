@@ -181,15 +181,19 @@
         // Debug: print the raw code string
         console.log("Raw permitted-development-rights codes:", codes);
 
-        // Replace multiple possible delimiters (spaces, commas, slashes) with hyphens, then split
+        // Replace multiple delimiters (spaces, commas, slashes, etc.) with a hyphen, then split
         const normalizedCodes = codes.replace(/[\s,\/]+/g, '-');
 
         // Split the codes by hyphen and trim each one
         const codeArray = normalizedCodes.split('-').map(code => code.trim());
 
+        // Debug each code after splitting
+        console.log("Codes after splitting:", codeArray);
+
         let knownRestrictions = '';
         let unknownCodes = '';
 
+        // Iterate over each code and check if it's in the dictionary
         codeArray.forEach(code => {
             const meaning = article4CodeMeanings[code];
             if (meaning) {
@@ -202,6 +206,7 @@
         console.log("Known restrictions:", knownRestrictions);
         console.log("Unknown codes:", unknownCodes);
 
+        // Prepare the full message
         let fullMessage = knownRestrictions || 'No known restrictions';
         if (unknownCodes) {
             fullMessage += `<br><strong>Unknown Codes:</strong><br>${unknownCodes}`;
