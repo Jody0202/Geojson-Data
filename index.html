@@ -181,8 +181,8 @@
         // Debug: print the raw code string
         console.log("Raw permitted-development-rights codes:", codes);
 
-        // Replace multiple delimiters (spaces, commas, slashes, etc.) with a hyphen, then split
-        const normalizedCodes = codes.replace(/[\s,\/]+/g, '-');
+        // Normalize the codes by replacing multiple delimiters (spaces, commas, slashes, semicolons) with a single hyphen
+        const normalizedCodes = codes.replace(/[\s,\/;]+/g, '-').trim();
 
         // Split the codes by hyphen and trim each one
         const codeArray = normalizedCodes.split('-').map(code => code.trim());
@@ -195,11 +195,13 @@
 
         // Iterate over each code and check if it's in the dictionary
         codeArray.forEach(code => {
-            const meaning = article4CodeMeanings[code];
+            // Normalize code for checking (optional)
+            const cleanedCode = code.toUpperCase(); // Normalize to upper case for consistent lookup
+            const meaning = article4CodeMeanings[cleanedCode];
             if (meaning) {
                 knownRestrictions += `${meaning}<br>`;
             } else {
-                unknownCodes += `Unknown restriction for code ${code}<br>`;
+                unknownCodes += `Unknown restriction for code ${cleanedCode}<br>`;
             }
         });
 
