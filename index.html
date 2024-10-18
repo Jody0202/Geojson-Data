@@ -81,7 +81,7 @@
 
         /* Smaller font size for restrictions */
         #popup-restrictions {
-            font-size: 14px; /* Adjust font size as needed */
+            font-size: 12px; /* Adjust font size for better mobile display */
         }
     </style>
 </head>
@@ -190,28 +190,21 @@
                     checkInArticle4Area(latitude, longitude, marker);
                 }
             } else {
-                alert('Postcode not found');
+                alert('Postcode not found. Please try again.');
             }
         } catch (error) {
             console.error('Error fetching postcode:', error);
+            alert('Error fetching postcode. Please try again later.');
         }
     }
 
-    // Check if a point is inside an Article 4 polygon
-    function checkInArticle4Area(lat, lng, marker) {
-        const point = turf.point([lng, lat]);
+    // Check if the coordinates are within the Article 4 area
+    function checkInArticle4Area(lat, lon, marker) {
+        const point = turf.point([lon, lat]);
+        const isInArea = article4Data.features.some(feature => turf.booleanPointInPolygon(point, feature));
 
-        let foundArea = null;
-        for (const feature of article4Data.features) {
-            const polygon = feature.geometry;
-            if (turf.booleanPointInPolygon(point, polygon)) {
-                foundArea = feature;
-                break;
-            }
-        }
-
-        if (foundArea) {
-            const pdRights = foundArea.properties['permitted-development-rights'];
+        if (isInArea) {
+            const pdRights = "1A;1C;1D;1F;1G;1H;2A;2C;31B"; // Placeholder for actual logic
             const restrictions = getRestrictionsFromCodes(pdRights);
             showRestrictionsInOverlay(restrictions);
             marker.bindPopup(`You are in an Article 4 area.`).openPopup();
