@@ -45,43 +45,31 @@
         .legend-item {
             margin-top: 5px;
         }
-
-        /* Popup overlay styling */
         #popup-overlay {
-            display: none; /* Hidden by default */
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
-            color: white; /* Text color */
-            padding: 20px;
-            overflow-y: auto; /* Allow scrolling */
-            z-index: 2000; /* Ensure it appears above other elements */
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 1001; /* Ensure it's above everything else */
         }
-
-        #popup-content {
-            background: rgba(0, 0, 0, 0.8); /* Darker background for the content area */
-            border-radius: 10px;
-            padding: 15px;
-            max-height: 80vh; /* Set max height to allow scrolling */
-            overflow-y: auto; /* Enable vertical scrolling */
-        }
-
-        #close-popup {
-            background: red;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        /* Smaller font size for restrictions */
         #popup-restrictions {
-            font-size: 12px; /* Adjust font size for better mobile display */
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%; /* Responsive width */
+            max-height: 80vh; /* Allow scrolling if content exceeds this height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            font-size: 12px; /* Adjust font size for mobile */
+        }
+        #close-popup {
+            cursor: pointer;
+            font-weight: bold;
+            text-align: right;
         }
     </style>
 </head>
@@ -97,11 +85,10 @@
     <div class="legend-title">Legend</div>
 </div>
 
-<!-- Popup overlay for mobile -->
 <div id="popup-overlay">
-    <div id="popup-content">
-        <button id="close-popup">Close</button>
-        <div id="popup-restrictions"></div>
+    <div id="popup-restrictions">
+        <div id="close-popup">X Close</div>
+        <div id="popup-content"></div>
     </div>
 </div>
 
@@ -190,24 +177,34 @@
                     checkInArticle4Area(latitude, longitude, marker);
                 }
             } else {
-                alert('Postcode not found. Please try again.');
+                alert('Postcode not found');
             }
         } catch (error) {
             console.error('Error fetching postcode:', error);
-            alert('Error fetching postcode. Please try again later.');
         }
     }
 
-    // Check if the coordinates are within the Article 4 area
+    // Check if a point is inside an Article 4 polygon
     function checkInArticle4Area(lat, lon, marker) {
         const point = turf.point([lon, lat]);
-        const isInArea = article4Data.features.some(feature => turf.booleanPointInPolygon(point, feature));
+        let foundArea = null;
 
-        if (isInArea) {
-            const pdRights = "1A;1C;1D;1F;1G;1H;2A;2C;31B"; // Placeholder for actual logic
+        // Check if the point is inside any Article 4 polygon
+        for (const feature of article4Data.features) {
+            const polygon = feature.geometry;
+            if (turf.booleanPointInPolygon(point, polygon)) {
+                foundArea = feature;
+                break; // Exit loop once found
+            }
+        }
+
+        if (foundArea) {
+            const pdRights = foundArea.properties['permitted-development-rights'] || ''; // Ensure you're getting the correct rights
             const restrictions = getRestrictionsFromCodes(pdRights);
-            showRestrictionsInOverlay(restrictions);
+            showRestrictionsInOverlay(restrictions); // Show the restrictions in the overlay
             marker.bindPopup(`You are in an Article 4 area.`).openPopup();
+        } else {
+            marker.bindPopup(`You are not in an Article 4 area.`).openPopup();
         }
     }
 
@@ -215,25 +212,9 @@
     function getRestrictionsFromCodes(codes) {
         if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
 
-        // Debug: print the raw code string
-        console.log("Raw permitted-development-rights codes:", codes);
-
-        // Normalize codes by replacing multiple delimiters and trimming spaces
-        const normalizedCodes = codes.replace(/[\s,\/]+/g, ';').split(';').map(code => code.trim());
-
-        // Debug each code after splitting
-        console.log("Codes after splitting:", normalizedCodes);
-
-        let knownRestrictions = '';
-
-        // Iterate over each code and check if it's in the dictionary
-        normalizedCodes.forEach(code => {
-            const meaning = article4CodeMeanings[code] || `Unknown code: ${code}`;
-            knownRestrictions += `<li>${meaning}</li>`; // Create list item
-        });
-
-        // Prepare the full message
-        return `<h2>Article 4 Direction</h2><ul>${knownRestrictions}</ul>`; // Wrap in ul for bullet points
+        const codeArray = codes.split(';');
+        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
+        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
     // Show restrictions in a full-screen overlay
@@ -241,14 +222,14 @@
         const overlay = document.getElementById('popup-overlay');
         const content = document.getElementById('popup-restrictions');
         content.innerHTML = restrictions; // Set the restrictions in the overlay
-        overlay.style.display = 'block'; // Show the overlay
+        overlay.style.display = 'flex'; // Show the overlay
     }
 
     // Close the popup overlay
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
-</script>
 
+</script>
 </body>
 </html>
