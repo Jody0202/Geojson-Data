@@ -80,7 +80,7 @@
 <div id="search-container">
     <input type="text" id="postcode" placeholder="Enter postcode" />
     <button onclick="searchPostcode()">Search</button>
-    <button onclick="getLocation()">Use My Location</button> <!-- Button to use user's location -->
+    <button id="location-btn">Use My Location</button>
 </div>
 
 <div id="map"></div>
@@ -190,33 +190,6 @@
         }
     }
 
-    // Function to get user's location
-    function getLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(success, error);
-        } else {
-            alert("Geolocation is not supported by this browser.");
-        }
-    }
-
-    function success(position) {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        mainMap.setView([lat, lon], 13);
-        const marker = L.marker([lat, lon]).addTo(mainMap).bindPopup(`You are here: (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
-        marker.openPopup();
-
-        // Check if the user's location falls within an Article 4 polygon or any other restricted area
-        if (article4Data) {
-            checkInRestrictedAreas(lat, lon, marker);
-        }
-    }
-
-    function error() {
-        alert("Unable to retrieve your location. Please ensure location services are enabled.");
-    }
-
     // Check if a point is inside any restricted area
     function checkInRestrictedAreas(lat, lon, marker) {
         const point = turf.point([lon, lat]);
@@ -234,68 +207,74 @@
             
             // Get restrictions based on permitted-development-rights
             const codes = article4Result.properties['permitted-development-rights'];
-            const restrictions = getRestrictionsFromCodes(codes, notes);
-            showRestrictionsInOverlay(restrictions); // Show restrictions in overlay
+            codes.split(', ').forEach(code => {
+                if (article4CodeMeanings[code]) {
+                    areaTypes.push(article4CodeMeanings[code]);
+                }
+            });
+
+            showPopup(foundAreas, areaTypes, notes);
         }
 
-        // Check other layers
+        // Check other areas
         otherLayersData.forEach(layer => {
             const result = checkInArea(point, layer.data);
             if (result) {
                 foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer name
+                areaTypes.push(layer.name);
             }
         });
 
-        // Prepare the output for the marker popup
         if (foundAreas.length > 0) {
-            const areaDescriptions = areaTypes.join(', ');
-            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
-        } else {
-            marker.bindPopup(`You are not in a restricted area.`).openPopup();
+            showPopup(foundAreas, areaTypes);
         }
     }
 
-    // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes, notes) { // Add notes parameter
-        if (!codes || codes.trim() === "None given") { // Check for blank or "None given"
-            return notes && notes.trim() !== '' ? 
-                `<h3>Article 4 Direction</h3><ul><li>${notes}</li></ul>` : 
-                `<h3>Article 4 Direction</h3><ul><li>No further information</li></ul>`;
-        }
+    // Function to check if a point is within a GeoJSON area
+    function checkInArea(point, geojson) {
+        let feature = turf.booleanPointInPolygon(point, turf.featureCollection(geojson.features));
+        return feature ? geojson.features.find(f => turf.booleanPointInPolygon(point, f)) : null;
+    }
 
-        const codeArray = codes.split(';');
-        const descriptions = codeArray.map(code => {
-            if (article4CodeMeanings[code]) {
-                return article4CodeMeanings[code]; // Code found in dictionary
-            } else {
-                return `Unknown code: ${code}`; // Code not found
-            }
+    // Function to show popup with area restrictions
+    function showPopup(foundAreas, areaTypes, notes = '') {
+        const popupContent = document.getElementById('popup-content');
+        popupContent.innerHTML = `<strong>Restrictions found:</strong><br>`;
+
+        areaTypes.forEach(areaType => {
+            popupContent.innerHTML += `${areaType}<br>`;
         });
 
-        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
+        if (notes) {
+            popupContent.innerHTML += `<strong>Notes:</strong> ${notes}<br>`;
+        }
+
+        // Show popup overlay
+        document.getElementById('popup-overlay').style.display = 'flex';
     }
 
-    // Show restrictions in the overlay
-    function showRestrictionsInOverlay(restrictions) {
-        document.getElementById('popup-content').innerHTML = restrictions;
-        document.getElementById('popup-overlay').style.display = 'flex'; // Show overlay
-    }
-
-    // Close the popup overlay
+    // Close popup event
     document.getElementById('close-popup').addEventListener('click', function() {
-        document.getElementById('popup-overlay').style.display = 'none'; // Hide overlay
+        document.getElementById('popup-overlay').style.display = 'none';
     });
 
-    // Function to check if a point is inside a GeoJSON area
-    function checkInArea(point, geojson) {
-        for (const feature of geojson.features) {
-            if (turf.booleanPointInPolygon(point, feature.geometry)) {
-                return feature; // Return the feature if the point is within the polygon
-            }
+    // Add geolocation functionality
+    document.getElementById('location-btn').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                mainMap.setView([lat, lon], 13);
+                const marker = L.marker([lat, lon]).addTo(mainMap).bindPopup('You are here!').openPopup();
+                // Check if the current location is within restricted areas
+                checkInRestrictedAreas(lat, lon, marker);
+            }, function() {
+                alert('Geolocation failed. Please ensure location access is allowed.');
+            });
+        } else {
+            alert('Geolocation is not supported by this browser.');
         }
-        return null; // Return null if the point is not in any area
-    }
+    });
 </script>
 </body>
 </html>
