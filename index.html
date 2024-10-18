@@ -46,31 +46,34 @@
             margin-top: 5px;
         }
         #popup-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0, 0, 0, 0.7);
-            display: none; /* Initially hidden */
             justify-content: center;
             align-items: center;
-            z-index: 1001; /* Ensure it's above everything else */
+            z-index: 2000;
         }
-        #popup-restrictions {
+        #popup-content {
             background: white;
-            border-radius: 8px;
             padding: 20px;
-            width: 90%; /* Responsive width */
-            max-height: 80vh; /* Allow scrolling if content exceeds this height */
-            overflow-y: auto; /* Enable vertical scrolling */
-            font-size: 12px; /* Adjust font size for mobile */
+            border-radius: 8px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto; /* Allow scrolling */
+            font-size: 0.9em; /* Adjust font size */
         }
         #close-popup {
             cursor: pointer;
-            font-weight: bold;
-            text-align: right;
-            margin-bottom: 10px; /* Space between close button and content */
+            background-color: red;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            float: right;
         }
     </style>
 </head>
@@ -87,9 +90,9 @@
 </div>
 
 <div id="popup-overlay">
-    <div id="popup-restrictions">
-        <div id="close-popup">X Close</div>
-        <div id="popup-content"></div>
+    <div id="popup-content">
+        <button id="close-popup">X Close</button>
+        <div id="restrictions-content"></div>
     </div>
 </div>
 
@@ -105,7 +108,7 @@
     }).addTo(mainMap);
 
     let article4Layer;
-    let article4Data; // Store the loaded Article 4 GeoJSON data
+    let article4Data;
 
     // Define the meaning of Article 4 codes manually
     const article4CodeMeanings = {
@@ -141,7 +144,7 @@
                 }).addTo(mainMap);
 
                 if (name === 'Article 4 Direction') {
-                    article4Layer = layer; // Save Article 4 layer
+                    article4Layer = layer;
                     article4Data = data; // Store the data globally
                 }
 
@@ -173,62 +176,87 @@
                 const marker = L.marker([latitude, longitude]).addTo(mainMap).bindPopup(`You are here: ${postcode}`);
                 marker.openPopup();
 
+                let legendAreas = [];
                 // Check if the postcode falls within an Article 4 polygon
                 if (article4Data) {
-                    checkInArticle4Area(latitude, longitude, marker);
+                    const inArticle4 = checkInArticle4Area(latitude, longitude);
+                    if (inArticle4) {
+                        legendAreas.push("Article 4 Direction");
+                    }
+                }
+
+                // Check if the postcode falls within other polygon layers
+                const inGreenBelt = checkInPolygonLayer('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', latitude, longitude);
+                const inConservationArea = checkInPolygonLayer('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', latitude, longitude);
+                
+                if (inGreenBelt) {
+                    legendAreas.push("Green Belt");
+                }
+                if (inConservationArea) {
+                    legendAreas.push("Conservation Area");
+                }
+
+                if (legendAreas.length > 0) {
+                    const areasText = `Location is within the following areas: ${legendAreas.join(", ")}.`;
+                    marker.bindPopup(`${areasText}<br>You are here: ${postcode}`).openPopup();
+                } else {
+                    marker.bindPopup(`Postcode is not in any specified area.`).openPopup();
+                }
+
+                // Show restrictions if applicable
+                if (inArticle4) {
+                    const restrictions = getRestrictionsFromCodes(inArticle4);
+                    showRestrictionsInOverlay(restrictions);
                 }
             } else {
-                alert('Postcode not found');
+                alert("Postcode not found.");
             }
         } catch (error) {
-            console.error('Error fetching postcode:', error);
+            console.error("Error fetching postcode data:", error);
         }
     }
 
-    // Check if a point is inside an Article 4 polygon
-    function checkInArticle4Area(lat, lon, marker) {
-        const point = turf.point([lon, lat]);
-        let foundArea = null;
+    // Function to check if the postcode is within the Article 4 area
+    function checkInArticle4Area(lat, lng) {
+        const point = turf.point([lng, lat]);
+        return article4Layer.getLayers().some(layer => turf.booleanPointInPolygon(point, layer.toGeoJSON().geometry));
+    }
 
-        // Check if the point is inside any Article 4 polygon
-        for (const feature of article4Data.features) {
-            const polygon = feature.geometry;
-            if (turf.booleanPointInPolygon(point, polygon)) {
-                foundArea = feature;
-                break; // Exit loop once found
+    // Function to check if the postcode is within a given polygon layer
+    async function checkInPolygonLayer(url, lat, lng) {
+        const response = await fetch(url);
+        const data = await response.json();
+        const point = turf.point([lng, lat]);
+        return data.features.some(feature => turf.booleanPointInPolygon(point, feature.geometry));
+    }
+
+    // Function to get restrictions based on Article 4 codes
+    function getRestrictionsFromCodes(inArticle4) {
+        // Here you can define what codes correspond to specific restrictions
+        const restrictions = [];
+        const codes = inArticle4.split(';');
+
+        codes.forEach(code => {
+            if (article4CodeMeanings[code]) {
+                restrictions.push(article4CodeMeanings[code]);
             }
-        }
+        });
 
-        if (foundArea) {
-            const pdRights = foundArea.properties['permitted-development-rights'] || ''; // Ensure you're getting the correct rights
-            const restrictions = getRestrictionsFromCodes(pdRights);
-            showRestrictionsInOverlay(restrictions); // Show the restrictions in the overlay
-            marker.bindPopup(`You are in an Article 4 area.`).openPopup();
-        } else {
-            marker.bindPopup(`You are not in an Article 4 area.`).openPopup();
-        }
+        return restrictions;
     }
 
-    // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes) {
-        if (!codes) return 'Article 4 Direction has no associated restrictions.';
-        const codeArray = codes.split(';');
-        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
-        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
-    }
-
-    // Show restrictions in a full-screen overlay
+    // Function to display restrictions in an overlay
     function showRestrictionsInOverlay(restrictions) {
-        const overlay = document.getElementById('popup-overlay');
-        const content = document.getElementById('popup-content');
-        content.innerHTML = restrictions; // Set the restrictions in the overlay
-        overlay.style.display = 'flex'; // Show the overlay
+        const content = document.getElementById('restrictions-content');
+        content.innerHTML = "<h3>Article 4 Direction</h3><ul>" + restrictions.map(r => "<li>" + r + "</li>").join('') + "</ul>";
+        
+        document.getElementById('popup-overlay').style.display = 'flex';
     }
 
-    // Close the popup overlay
-    document.getElementById('close-popup').addEventListener('click', () => {
+    // Close button functionality for the popup
+    document.getElementById('close-popup').onclick = function () {
         document.getElementById('popup-overlay').style.display = 'none';
-    });
+    };
 </script>
 </body>
 </html>
