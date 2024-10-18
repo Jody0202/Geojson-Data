@@ -64,7 +64,7 @@
             max-width: 90%;
             max-height: 90%;
             overflow-y: auto; /* Allow scrolling */
-            font-size: 0.9em; /* Adjust font size */
+            font-size: 0.8em; /* Adjust font size for mobile */
         }
         #close-popup {
             cursor: pointer;
@@ -110,7 +110,7 @@
     let article4Layer;
     let article4Data;
 
-    // Define the meaning of Article 4 codes manually
+    // Define the meanings of Article 4 codes
     const article4CodeMeanings = {
         '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
         '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
@@ -187,7 +187,6 @@
                 // Check if the postcode falls within an Article 4 polygon
                 if (article4Data) {
                     const inArticle4 = checkInArticle4Area(latitude, longitude);
-                    console.log("In Article 4 Area:", inArticle4);
                     if (inArticle4) {
                         legendAreas.push("Article 4 Direction");
                         article4Restrictions = getRestrictionsFromCodes(inArticle4); // Get restrictions
