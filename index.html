@@ -1,4 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Area Restrictions</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 80vh;
+            width: 100%;
+        }
+        #search-container {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            background-color: white;
+            padding: 10px;
+            z-index: 1000;
+            border-radius: 5px;
+            width: 220px;
+        }
+        .search-input {
+            width: 150px;
+            padding: 5px;
+        }
+        #legend {
+            background: white;
+            line-height: 1.5;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+        .legend-title {
+            font-weight: bold;
+        }
+        .legend-item {
+            margin-top: 5px;
+        }
+        #popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 1001; /* Ensure it's above everything else */
+        }
+        #popup-restrictions {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%; /* Responsive width */
+            max-height: 80vh; /* Allow scrolling if content exceeds this height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            font-size: 12px; /* Adjust font size for mobile */
+        }
+        #close-popup {
+            cursor: pointer;
+            font-weight: bold;
+            text-align: right;
+            margin-bottom: 10px; /* Space between close button and content */
+        }
+    </style>
+</head>
+<body>
+
+<div id="search-container">
+    <input type="text" id="postcode" placeholder="Enter postcode" />
+    <button onclick="searchPostcode()">Search</button>
+</div>
+
+<div id="map"></div>
+<div id="legend">
+    <div class="legend-title">Legend</div>
+</div>
+
+<div id="popup-overlay">
+    <div id="popup-restrictions">
+        <div id="close-popup">X Close</div>
+        <div id="popup-content"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+
 <script>
+    const mainMap = L.map('map').setView([51.505, -0.09], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(mainMap);
+
+    let article4Layer;
+    let article4Data; // Store the loaded Article 4 GeoJSON data
+
+    const article4CodeMeanings = {
+        '1A': 'Restrictions on Enlargement, improvement or other alteration of a dwellinghouse e.g. Extensions.',
+        '1AA': 'Restrictions on Enlargement of a dwellinghouse by construction of additional storeys',
+        '1B': 'Restrictions on Additions etc to the roof of a dwellinghouse e.g. Dormers',
+        '1C': 'Restrictions on Any other alterations to a roof of a dwellinghouse',
+        '1D': 'Restrictions on Porches',
+        '1E': 'Restrictions on Buildings etc incidental to the enjoyment of a dwellinghouse e.g. Outbuildings',
+        '1F': 'Restrictions on Hard surfaces incidental to the enjoyment of a dwellinghouse',
+        '1G': 'Restrictions on Chimneys, flues etc on a dwellinghouse',
+        '1H': 'Restrictions on Microwave antenna on a dwellinghouse e.g. Satellite dishes',
+        '2A': 'Restrictions on Gates, fences, walls etc',
+        '2B': 'Restrictions on Means of access to a highway e.g. driveways',
+        '2C': 'Restrictions on Exterior painting',
+        '2D': 'Restrictions on Electrical outlet for recharging vehicles',
+        '2E': 'Restrictions on Electrical upstand for recharging vehicles',
+        '2F': 'Restrictions on Closed circuit television cameras – CCTV',
+        '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
+        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion',
+        '31B': 'Demolition of a gate, fence, or wall within a dwelling\'s curtilage that faces a highway, waterway, or open space'
+    };
+
+    // Fetch and load the GeoJSON layers, including Article 4 data
+    function loadGeoJSON(url, color, name) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const layer = L.geoJSON(data, {
+                    style: function () {
+                        return { color: color, weight: 2, fillOpacity: 0.5 };
+                    }
+                }).addTo(mainMap);
+
+                if (name === 'Article 4 Direction') {
+                    article4Layer = layer; // Save Article 4 layer
+                    article4Data = data; // Store the data globally
+                }
+
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `<span style="background-color: ${color}; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span>${name}`;
+                document.getElementById('legend').appendChild(legendItem);
+            })
+            .catch(error => console.error('Error loading GeoJSON:', error));
+    }
+
+    // Load layers (e.g., Article 4, Green Belt, Conservation)
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/article-4-direction-area.geojson', 'blue', 'Article 4 Direction');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/area-of-outstanding-natural-beauty.geojson', 'darkgreen', 'Area of Outstanding Natural Beauty');
+    loadGeoJSON('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', 'lightgreen', 'Green Belt');
+    loadGeoJSON('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', 'orange', 'Conservation Area');
+
     // Search function for postcode
     async function searchPostcode() {
         const postcode = document.getElementById('postcode').value;
@@ -30,51 +189,56 @@
         const point = turf.point([lon, lat]);
         let foundArea = null;
 
-        // Check if the point is inside any Article 4 polygon
         for (const feature of article4Data.features) {
             const polygon = feature.geometry;
             if (turf.booleanPointInPolygon(point, polygon)) {
                 foundArea = feature;
-                break; // Exit loop once found
+                break;
             }
         }
 
         if (foundArea) {
-            const pdRights = foundArea.properties['permitted-development-rights'] || ''; // Extract PDR info
-            const notes = foundArea.properties['Notes'] || ''; // Extract Notes info
+            const pdRights = foundArea.properties['permitted-development-rights'] || '';
+            const notes = foundArea.properties['Notes'] || '';
             const restrictions = getRestrictionsFromCodes(pdRights, notes);
-            showRestrictionsInOverlay(restrictions); // Show the restrictions in the overlay
+            showRestrictionsInOverlay(restrictions);
             marker.bindPopup(`You are located in: Article 4 Direction.`).openPopup();
         } else {
             marker.bindPopup(`You are not in an Article 4 area.`).openPopup();
         }
     }
 
-    // Convert the codes in 'permitted-development-rights' into their descriptions, using 'Notes' if necessary
+    // Convert 'permitted-development-rights' codes into descriptions, fallback to 'Notes' if empty
     function getRestrictionsFromCodes(codes, notes) {
-        if (!codes || codes.trim() === '' || codes === 'None given') {
-            if (notes && notes.trim() !== '') {
-                return `<h3>Article 4 Direction</h3><p>${notes}</p>`;
-            } else {
-                return `<h3>Article 4 Direction</h3><p>No information.</p>`;
-            }
-        }
+        if (codes.trim()) {
+            return codes.splitHere is the continuation and completion of the map-based web application script. It includes the **functionality to handle postcode searches** and **restrictions from Article 4 Directions** with a fallback to **Notes** if no development rights are listed.
 
-        const codeArray = codes.split(';');
-        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
-        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
+```html
+    // Convert 'permitted-development-rights' codes into descriptions, fallback to 'Notes' if empty
+    function getRestrictionsFromCodes(codes, notes) {
+        if (codes.trim()) {
+            return codes.split(',').map(code => {
+                return article4CodeMeanings[code.trim()] || `Unknown restriction code: ${code.trim()}`;
+            }).join('<br>');
+        } else {
+            return notes || 'No specific restrictions listed.';
+        }
     }
 
-    // Show restrictions in a full-screen overlay
+    // Show the restrictions in a popup overlay
     function showRestrictionsInOverlay(restrictions) {
         const overlay = document.getElementById('popup-overlay');
-        const content = document.getElementById('popup-content');
-        content.innerHTML = restrictions; // Set the restrictions in the overlay
-        overlay.style.display = 'flex'; // Show the overlay
+        const popupContent = document.getElementById('popup-content');
+        popupContent.innerHTML = `<strong>Restrictions:</strong><br>${restrictions}`;
+        overlay.style.display = 'flex';
     }
 
     // Close the popup overlay
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
+
 </script>
+
+</body>
+</html>
