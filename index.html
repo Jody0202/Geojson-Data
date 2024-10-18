@@ -65,6 +65,8 @@
             background: rgba(0, 0, 0, 0.8); /* Darker background for the content area */
             border-radius: 10px;
             padding: 15px;
+            max-height: 80vh; /* Set max height to allow scrolling */
+            overflow-y: auto; /* Enable vertical scrolling */
         }
 
         #close-popup {
@@ -75,6 +77,11 @@
             border-radius: 5px;
             cursor: pointer;
             margin-bottom: 10px;
+        }
+
+        /* Smaller font size for restrictions */
+        #popup-restrictions {
+            font-size: 14px; /* Adjust font size as needed */
         }
     </style>
 </head>
@@ -204,14 +211,10 @@
         }
 
         if (foundArea) {
-            const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
-            console.log("Permitted development rights (raw string):", pdRights); // Debugging
-
+            const pdRights = foundArea.properties['permitted-development-rights'];
             const restrictions = getRestrictionsFromCodes(pdRights);
-            // Show restrictions in overlay for mobile
             showRestrictionsInOverlay(restrictions);
-        } else {
-            marker.bindPopup(`Postcode is not in an Article 4 area.`).openPopup();
+            marker.bindPopup(`You are in an Article 4 area.`).openPopup();
         }
     }
 
