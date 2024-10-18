@@ -215,55 +215,57 @@
             const areaDescriptions = areaTypes.join(', ');
             marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
 
-            // Display Article 4 restrictions with codes
+            // Display only Article 4 restrictions if found
             if (article4Result) {
-                const restrictionCodes = article4Result.properties['permitted-development-rights'] || "None given";
-                let restrictionOutput;
-
-                // Check for restriction codes
-                if (restrictionCodes && restrictionCodes !== "None given") {
-                    const codesArray = restrictionCodes.split(',').map(code => code.trim());
-                    const unknownCodes = codesArray.filter(code => !article4CodeMeanings[code]); // Filter out unknown codes
-                    if (unknownCodes.length > 0) {
-                        restrictionOutput = `You are located in: Article 4 Direction<br>Restriction code: ${unknownCodes.join(', ')}`;
-                    } else {
-                        restrictionOutput = `You are located in: Article 4 Direction`;
-                    }
-                } else {
-                    const notes = article4Result.properties['Notes'];
-                    restrictionOutput = `<h3>Article 4 Direction</h3><p>${notes && notes.trim() !== "" ? notes : "No further information."}</p>`;
-                }
-
-                showRestrictionsInOverlay(restrictionOutput);
+                const codes = article4Result.properties['permitted-development-rights'];
+                const notes = article4Result.properties['Note'] || ''; // Assuming 'Note' is the correct property name
+                const restrictions = getRestrictionsFromCodes(codes, notes);
+                showRestrictionsInOverlay(restrictions);
             }
         } else {
-            marker.bindPopup(`You are not in a restricted area.`).openPopup();
+            marker.bindPopup('You are not in a restricted area.').openPopup();
         }
     }
 
-    // Check if a point is inside any polygon in the given GeoJSON data
-    function checkInArea(point, geojson) {
-        for (const feature of geojson.features) {
-            const polygon = feature.geometry;
-            if (turf.booleanPointInPolygon(point, polygon)) {
-                return feature; // Return the first matching area
+    // Function to get restrictions based on codes
+    function getRestrictionsFromCodes(codes, notes) {
+        // If codes are empty or "None given"
+        if (!codes || codes === 'None given') {
+            return notes ? `<h3>Article 4 Direction</h3><p>${notes}</p>` : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
+        }
+
+        const codeArray = codes.split(';');
+        const descriptions = [];
+
+        codeArray.forEach(code => {
+            if (article4CodeMeanings[code]) {
+                descriptions.push(article4CodeMeanings[code]);
+            } else {
+                descriptions.push(`Restriction code: ${code}`); // Show unknown code
             }
-        }
-        return null; // Not found in this area
+        });
+
+        // Create HTML output for known codes
+        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
-    // Show restrictions in a full-screen overlay
+    // Function to check if a point is in a given area
+    function checkInArea(point, geojsonData) {
+        return geojsonData.features.find(feature => turf.booleanPointInPolygon(point, turf.geom(feature.geometry)));
+    }
+
+    // Function to show restrictions in an overlay
     function showRestrictionsInOverlay(restrictions) {
-        const overlay = document.getElementById('popup-overlay');
-        const content = document.getElementById('popup-content');
-        content.innerHTML = restrictions; // Set the restrictions in the overlay
-        overlay.style.display = 'flex'; // Show the overlay
+        document.getElementById('popup-content').innerHTML = restrictions;
+        document.getElementById('popup-overlay').style.display = 'flex';
     }
 
-    // Close the popup overlay
+    // Close popup event listener
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
+
 </script>
+
 </body>
 </html>
