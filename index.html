@@ -177,17 +177,20 @@
                 marker.openPopup();
 
                 let legendAreas = [];
+                let article4Restrictions = [];
+
                 // Check if the postcode falls within an Article 4 polygon
                 if (article4Data) {
                     const inArticle4 = checkInArticle4Area(latitude, longitude);
                     if (inArticle4) {
                         legendAreas.push("Article 4 Direction");
+                        article4Restrictions = getRestrictionsFromCodes(inArticle4); // Get restrictions
                     }
                 }
 
                 // Check if the postcode falls within other polygon layers
-                const inGreenBelt = checkInPolygonLayer('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', latitude, longitude);
-                const inConservationArea = checkInPolygonLayer('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', latitude, longitude);
+                const inGreenBelt = await checkInPolygonLayer('https://raw.githubusercontent.com/Jody0202/Geojson-Data/main/green-belt.geojson', latitude, longitude);
+                const inConservationArea = await checkInPolygonLayer('https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/arcgis/rest/services/Conservation_Areas/FeatureServer/1/query?outFields=*&where=1%3D1&f=geojson', latitude, longitude);
                 
                 if (inGreenBelt) {
                     legendAreas.push("Green Belt");
@@ -196,18 +199,19 @@
                     legendAreas.push("Conservation Area");
                 }
 
+                // Update the marker popup with area information
                 if (legendAreas.length > 0) {
                     const areasText = `Location is within the following areas: ${legendAreas.join(", ")}.`;
                     marker.bindPopup(`${areasText}<br>You are here: ${postcode}`).openPopup();
                 } else {
-                    marker.bindPopup(`Postcode is not in any specified area.`).openPopup();
+                    marker.bindPopup(`You are here: ${postcode}`).openPopup();
                 }
 
-                // Show restrictions if applicable
-                if (inArticle4) {
-                    const restrictions = getRestrictionsFromCodes(inArticle4);
-                    showRestrictionsInOverlay(restrictions);
+                // Show restrictions in the overlay if Article 4 restrictions exist
+                if (article4Restrictions.length > 0) {
+                    showRestrictionsInOverlay(article4Restrictions);
                 }
+
             } else {
                 alert("Postcode not found.");
             }
@@ -232,7 +236,6 @@
 
     // Function to get restrictions based on Article 4 codes
     function getRestrictionsFromCodes(inArticle4) {
-        // Here you can define what codes correspond to specific restrictions
         const restrictions = [];
         const codes = inArticle4.split(';');
 
