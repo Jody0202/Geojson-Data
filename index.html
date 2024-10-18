@@ -99,9 +99,6 @@
                 article4Data = data; // Store the data globally
                 article4Layer = L.geoJSON(data, {
                     style: { color: 'blue', weight: 2, fillOpacity: 0.5 },
-                    onEachFeature: function (feature, layer) {
-                        layer.bindPopup("Article 4 Direction");
-                    }
                 }).addTo(mainMap);
             })
             .catch(error => console.error('Error loading GeoJSON:', error));
