@@ -191,37 +191,16 @@
     // Check if a point is inside any restricted area
     function checkInRestrictedAreas(lat, lon, marker) {
         const point = turf.point([lon, lat]);
-        let foundAreas = [];
-        let areaTypes = [];
 
-        // Check Article 4 area
+        // Check Article 4 Directions
         const article4Result = checkInArea(point, article4Data);
+        console.log('Article 4 Result:', article4Result); // Debugging line
+
         if (article4Result) {
-            foundAreas.push(article4Result);
-            areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
-        }
-
-        // Check other layers
-        otherLayersData.forEach(layer => {
-            const result = checkInArea(point, layer.data);
-            if (result) {
-                foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer name
-            }
-        });
-
-        // Prepare the output for the marker popup
-        if (foundAreas.length > 0) {
-            const areaDescriptions = areaTypes.join(', ');
-            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
-
-            // Display only Article 4 restrictions if found
-            if (article4Result) {
-                const codes = article4Result.properties['permitted-development-rights'];
-                const notes = article4Result.properties['Note'] || ''; // Assuming 'Note' is the correct property name
-                const restrictions = getRestrictionsFromCodes(codes, notes);
-                showRestrictionsInOverlay(restrictions);
-            }
+            const codes = article4Result.properties['permitted-development-rights'];
+            const notes = article4Result.properties['Note'] || '';
+            const restrictions = getRestrictionsFromCodes(codes, notes);
+            showRestrictionsInOverlay(restrictions);
         } else {
             marker.bindPopup('You are not in a restricted area.').openPopup();
         }
@@ -229,7 +208,6 @@
 
     // Function to get restrictions based on codes
     function getRestrictionsFromCodes(codes, notes) {
-        // If codes are empty or "None given"
         if (!codes || codes === 'None given') {
             return notes ? `<h3>Article 4 Direction</h3><p>${notes}</p>` : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
         }
@@ -245,7 +223,6 @@
             }
         });
 
-        // Create HTML output for known codes
         return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
     }
 
@@ -264,7 +241,6 @@
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
-
 </script>
 
 </body>
