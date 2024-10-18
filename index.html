@@ -218,7 +218,18 @@
             // Display Article 4 restrictions with codes
             if (article4Result) {
                 const restrictionCodes = article4Result.properties['permitted-development-rights'] || "None given";
-                const restrictionOutput = `Restriction code: ${restrictionCodes}`;
+                let restrictionOutput = `Restriction code: ${restrictionCodes}`;
+
+                // Interpret the restriction codes if they exist
+                if (restrictionCodes && restrictionCodes !== "None given") {
+                    const codesArray = restrictionCodes.split(',').map(code => code.trim());
+                    const interpretedCodes = codesArray.map(code => {
+                        const meaning = article4CodeMeanings[code] || 'Meaning not provided';
+                        return `${code}: ${meaning}`;
+                    }).join('<br>'); // Line break for formatting
+
+                    restrictionOutput = `Restriction code:<br>${interpretedCodes}`;
+                }
 
                 // Check if restrictions exist; if not, fallback to Notes
                 let restrictionsInfo = restrictionOutput;
@@ -229,7 +240,7 @@
                         : `<h3>Article 4 Direction</h3><p>No further information.</p>`;
                 }
 
-                showRestrictionsInOverlay(restrictionsInfo);
+                showRestrictionsInOverlay(`<h3>Article 4 Direction</h3><p>${restrictionsInfo}</p>`);
             }
         } else {
             marker.bindPopup(`You are not in a restricted area.`).openPopup();
