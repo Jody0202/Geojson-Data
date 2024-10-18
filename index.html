@@ -45,15 +45,8 @@
         .legend-item {
             margin-top: 5px;
         }
-        /* CSS for the popup */
-        .leaflet-popup-content {
-            max-height: 300px; /* Limit the height */
-            overflow-y: auto; /* Enable scrolling */
-            font-size: 14px; /* Set a smaller font size */
-            width: auto; /* Make the width responsive */
-            max-width: 90vw; /* Limit the max width to 90% of viewport width */
-        }
-        /* Add styling for full-screen overlay */
+
+        /* Popup overlay styling */
         #popup-overlay {
             display: none; /* Hidden by default */
             position: fixed;
@@ -61,17 +54,19 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
+            background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+            color: white; /* Text color */
             padding: 20px;
             overflow-y: auto; /* Allow scrolling */
-            z-index: 2000;
+            z-index: 2000; /* Ensure it appears above other elements */
         }
+
         #popup-content {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.8); /* Darker background for the content area */
             border-radius: 10px;
             padding: 15px;
         }
+
         #close-popup {
             background: red;
             color: white;
@@ -79,6 +74,7 @@
             padding: 10px;
             border-radius: 5px;
             cursor: pointer;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -134,7 +130,8 @@
         '2E': 'Restrictions on Electrical upstand for recharging vehicles',
         '2F': 'Restrictions on Closed circuit television cameras – CCTV',
         '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
-        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion' // Updated code description
+        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion',
+        '31B': 'Demolition of a gate, fence, or wall within a dwelling\'s curtilage that faces a highway, waterway, or open space'
     };
 
     // Fetch and load the GeoJSON layers, including Article 4 data
@@ -218,6 +215,13 @@
         }
     }
 
+    // Get restrictions from codes
+    function getRestrictionsFromCodes(codes) {
+        const codeList = codes.split(';');
+        const restrictionList = codeList.map(code => article4CodeMeanings[code.trim()] || `Unknown code: ${code}`).join('<br>');
+        return restrictionList;
+    }
+
     // Show restrictions in a full-screen overlay
     function showRestrictionsInOverlay(restrictions) {
         const overlay = document.getElementById('popup-overlay');
@@ -230,48 +234,6 @@
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
-
-    // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes) {
-        if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
-
-        // Debug: print the raw code string
-        console.log("Raw permitted-development-rights codes:", codes);
-
-        // Replace multiple delimiters (spaces, commas, slashes, etc.) with a hyphen, then split
-        const normalizedCodes = codes.replace(/[\s,\/]+/g, '-');
-
-        // Split the codes by hyphen and trim each one
-        const codeArray = normalizedCodes.split('-').map(code => code.trim());
-
-        // Debug each code after splitting
-        console.log("Codes after splitting:", codeArray);
-
-        let knownRestrictions = [];
-        let unknownCodes = '';
-
-        // Iterate over each code and check if it's in the dictionary
-        codeArray.forEach(code => {
-            const meaning = article4CodeMeanings[code];
-            if (meaning) {
-                knownRestrictions.push(`<li>${meaning}</li>`); // Use list items for bullet points
-            } else {
-                unknownCodes += `Unknown restriction for code ${code}<br>`;
-            }
-        });
-
-        console.log("Known restrictions:", knownRestrictions);
-        console.log("Unknown codes:", unknownCodes);
-
-        // Prepare the full message
-        let fullMessage = knownRestrictions.length ? '<ul>' + knownRestrictions.join('') + '</ul>' : 'No known restrictions';
-        if (unknownCodes) {
-            fullMessage += `<br><strong>Unknown Codes:</strong><br>${unknownCodes}`;
-        }
-
-        return fullMessage;
-    }
 </script>
-
 </body>
 </html>
