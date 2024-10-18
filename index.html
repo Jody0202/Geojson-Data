@@ -215,11 +215,29 @@
         }
     }
 
-    // Get restrictions from codes
+    // Convert the codes in 'permitted-development-rights' into their descriptions
     function getRestrictionsFromCodes(codes) {
-        const codeList = codes.split(';');
-        const restrictionList = codeList.map(code => article4CodeMeanings[code.trim()] || `Unknown code: ${code}`).join('<br>');
-        return restrictionList;
+        if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
+
+        // Debug: print the raw code string
+        console.log("Raw permitted-development-rights codes:", codes);
+
+        // Normalize codes by replacing multiple delimiters and trimming spaces
+        const normalizedCodes = codes.replace(/[\s,\/]+/g, ';').split(';').map(code => code.trim());
+
+        // Debug each code after splitting
+        console.log("Codes after splitting:", normalizedCodes);
+
+        let knownRestrictions = '';
+
+        // Iterate over each code and check if it's in the dictionary
+        normalizedCodes.forEach(code => {
+            const meaning = article4CodeMeanings[code] || `Unknown code: ${code}`;
+            knownRestrictions += `<li>${meaning}</li>`; // Create list item
+        });
+
+        // Prepare the full message
+        return `<h2>Article 4 Direction</h2><ul>${knownRestrictions}</ul>`; // Wrap in ul for bullet points
     }
 
     // Show restrictions in a full-screen overlay
@@ -235,5 +253,6 @@
         document.getElementById('popup-overlay').style.display = 'none';
     });
 </script>
+
 </body>
 </html>
