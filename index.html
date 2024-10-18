@@ -201,10 +201,7 @@
 
                 // Update the marker popup with area information
                 if (legendAreas.length > 0) {
-                    const areasText = `Location is within the following areas: ${legendAreas.join(", ")}.`;
-                    marker.bindPopup(`${areasText}<br>You are here: ${postcode}`).openPopup();
-                } else {
-                    marker.bindPopup(`You are here: ${postcode}`).openPopup();
+                    marker.bindPopup(`You are here: ${postcode}<br>${legendAreas.join(', ')}`).openPopup();
                 }
 
                 // Show restrictions in the overlay if Article 4 restrictions exist
