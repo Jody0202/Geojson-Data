@@ -165,7 +165,7 @@
 
         if (foundArea) {
             const pdRights = foundArea.properties['permitted-development-rights'] || 'Not specified';
-            console.log("Permitted development rights:", pdRights); // Debugging
+            console.log("Permitted development rights (raw string):", pdRights); // Debugging
 
             const restrictions = getRestrictionsFromCodes(pdRights);
             marker.bindPopup(`Postcode is in an Article 4 area.<br><br>${restrictions}`).openPopup();
@@ -177,6 +177,9 @@
     // Convert the codes in 'permitted-development-rights' into their descriptions
     function getRestrictionsFromCodes(codes) {
         if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
+
+        // Debug: print the raw code string
+        console.log("Raw permitted-development-rights codes:", codes);
 
         // Split the codes if there are multiple, separated by hyphens or spaces
         const codeArray = codes.split('-').map(code => code.trim()); // Trim each code
@@ -193,6 +196,9 @@
             }
         });
 
+        console.log("Known restrictions:", knownRestrictions);
+        console.log("Unknown codes:", unknownCodes);
+
         let fullMessage = knownRestrictions || 'No known restrictions';
         if (unknownCodes) {
             fullMessage += `<br><strong>Unknown Codes:</strong><br>${unknownCodes}`;
@@ -202,4 +208,5 @@
     }
 </script>
 
-</
+</body>
+</html>
