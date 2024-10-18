@@ -91,7 +91,7 @@
         '2E': 'Restrictions on Electrical upstand for recharging vehicles',
         '2F': 'Restrictions on Closed circuit television cameras – CCTV',
         '2G': 'Restrictions on Moveable structures for pubs, restaurants etc',
-        '3L': 'Restrictions on Small Houses in Multiple Occupation (HMOs) to dwellinghouses and vice versa'
+        '3L': 'Restrictions on Houses in Multiple Occupation (HMOs) conversion' // Updated code description
     };
 
     // Fetch and load the GeoJSON layers, including Article 4 data
@@ -190,7 +190,7 @@
         // Debug each code after splitting
         console.log("Codes after splitting:", codeArray);
 
-        let knownRestrictions = '';
+        let knownRestrictions = [];
         let unknownCodes = '';
 
         // Iterate over each code and check if it's in the dictionary
@@ -199,7 +199,7 @@
             const cleanedCode = code.toUpperCase(); // Normalize to upper case for consistent lookup
             const meaning = article4CodeMeanings[cleanedCode];
             if (meaning) {
-                knownRestrictions += `${meaning}<br>`;
+                knownRestrictions.push(`<li>${meaning}</li>`); // Use <li> for bullet points
             } else {
                 unknownCodes += `Unknown restriction for code ${cleanedCode}<br>`;
             }
@@ -209,7 +209,7 @@
         console.log("Unknown codes:", unknownCodes);
 
         // Prepare the full message
-        let fullMessage = knownRestrictions || 'No known restrictions';
+        let fullMessage = knownRestrictions.length ? '<ul>' + knownRestrictions.join('') + '</ul>' : 'No known restrictions';
         if (unknownCodes) {
             fullMessage += `<br><strong>Unknown Codes:</strong><br>${unknownCodes}`;
         }
