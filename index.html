@@ -187,7 +187,7 @@
                 // Check if the postcode falls within an Article 4 polygon
                 if (article4Data) {
                     const inArticle4 = checkInArticle4Area(latitude, longitude);
-                    console.log("Article 4 Check:", inArticle4);
+                    console.log("In Article 4 Area:", inArticle4);
                     if (inArticle4) {
                         legendAreas.push("Article 4 Direction");
                         article4Restrictions = getRestrictionsFromCodes(inArticle4); // Get restrictions
