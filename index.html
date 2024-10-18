@@ -38,9 +38,11 @@
             position: absolute;
             bottom: 10px;
             left: 10px;
+            font-size: 12px; /* Reduced font size of legend */
         }
         .legend-title {
             font-weight: bold;
+            font-size: 12px; /* Reduced font size of legend title */
         }
         .legend-item {
             margin-top: 5px;
@@ -206,18 +208,18 @@
             const result = checkInArea(point, layer.data);
             if (result) {
                 foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer name
+                areaTypes.push(layer.name); // Include other layer names
             }
         });
 
-        // Prepare the output for the marker popup
+        // Bind popup with found areas
         if (foundAreas.length > 0) {
             const areaDescriptions = areaTypes.join(', ');
             marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
 
             // Display only Article 4 restrictions if found
             if (article4Result) {
-                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights']);
+                const restrictions = getRestrictionsFromCodes(article4Result.properties['permitted-development-rights'], article4Result.properties['Notes']);
                 showRestrictionsInOverlay(restrictions);
             }
         } else {
@@ -237,11 +239,16 @@
     }
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes) {
-        if (!codes) return 'No associated restrictions.';
-        const codeArray = codes.split(';');
-        const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
-        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
+    function getRestrictionsFromCodes(codes, notes) {
+        if (codes && codes.trim() !== '') {
+            const codeArray = codes.split(';');
+            const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
+            return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
+        } else if (notes && notes.trim() !== '') {
+            return `<h3>Notes</h3><p>${notes}</p>`;
+        } else {
+            return 'No further information.'; // Default message if nothing is found
+        }
     }
 
     // Show restrictions in a full-screen overlay
