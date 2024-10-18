@@ -203,71 +203,47 @@
             areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
 
             // Retrieve the notes information
-            const notes = article4Result.properties['notes'] || ""; // Adjusted to retrieve 'notes'
-            
-            // Get restrictions based on permitted-development-rights
-            const codes = article4Result.properties['permitted-development-rights'];
-            const restrictions = getRestrictionsFromCodes(codes, notes);
-            showRestrictionsInOverlay(restrictions); // Show restrictions in overlay
+            const notes = article4Result.properties['notes'] || ""; // Adjusted to retrieve 'notes' property
+            foundAreas.push(`Notes: ${notes}`); // Add notes to foundAreas
         }
 
         // Check other layers
-        otherLayersData.forEach(layer => {
+        for (const layer of otherLayersData) {
             const result = checkInArea(point, layer.data);
             if (result) {
                 foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer name
+                areaTypes.push(layer.name); // Add the layer name to area types
             }
-        });
+        }
 
-        // Prepare the output for the marker popup
+        // If any areas are found, show the popup
         if (foundAreas.length > 0) {
-            const areaDescriptions = areaTypes.join(', ');
-            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
+            showRestrictionsPopup(foundAreas.join('<br>'), areaTypes);
+            marker.bindPopup("Restrictions found!").openPopup(); // Show restrictions on the marker
         } else {
-            marker.bindPopup(`You are not in a restricted area.`).openPopup();
+            marker.bindPopup("No restrictions found.").openPopup(); // No restrictions
         }
     }
 
-    // Convert the codes in 'permitted-development-rights' into their descriptions
-    function getRestrictionsFromCodes(codes, notes) { // Add notes parameter
-        if (!codes || codes.trim() === "None given") { // Check for blank or "None given"
-            return notes && notes.trim() !== '' ? 
-                `<h3>Article 4 Direction</h3><ul><li>${notes}</li></ul>` : 
-                `<h3>Article 4 Direction</h3><ul><li>No further information</li></ul>`;
+    // Function to check if a point is inside a GeoJSON polygon
+    function checkInArea(point, geoJsonData) {
+        const featureCollection = turf.featureCollection(geoJsonData.features);
+        const isInside = turf.booleanPointInPolygon(point, featureCollection);
+        if (isInside) {
+            return geoJsonData.features.find(feature => turf.booleanPointInPolygon(point, feature));
         }
-
-        const codeArray = codes.split(';');
-        const descriptions = codeArray.map(code => {
-            if (article4CodeMeanings[code]) {
-                return article4CodeMeanings[code]; // Code found in dictionary
-            } else {
-                return `Unknown code: ${code}`; // Code not found
-            }
-        });
-
-        return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
+        return null;
     }
 
-    // Show restrictions in the overlay
-    function showRestrictionsInOverlay(restrictions) {
-        document.getElementById('popup-content').innerHTML = restrictions;
-        document.getElementById('popup-overlay').style.display = 'flex'; // Show overlay
-    }
-
-    // Close the popup overlay
-    document.getElementById('close-popup').addEventListener('click', function() {
-        document.getElementById('popup-overlay').style.display = 'none'; // Hide overlay
-    });
-
-    // Function to check if a point is inside a GeoJSON area
-    function checkInArea(point, geojson) {
-        for (const feature of geojson.features) {
-            if (turf.booleanPointInPolygon(point, feature.geometry)) {
-                return feature; // Return the feature if the point is within the polygon
-            }
-        }
-        return null; // Return null if the point is not in any area
+    // Show restrictions in a popup
+    function showRestrictionsPopup(restrictions, areaTypes) {
+        document.getElementById('popup-content').innerHTML = `
+            <div><strong>Restrictions Found:</strong></div>
+            <div>${restrictions}</div>
+            <div class="legend-title">Area Types:</div>
+            <div>${areaTypes.join(', ')}</div>
+        `;
+        document.getElementById('popup-overlay').style.display = 'flex'; // Show the popup overlay
     }
 
     // Function to get the user's current location
@@ -284,6 +260,9 @@
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         
+        // Log for debugging
+        console.log("User's location - Latitude: " + latitude + ", Longitude: " + longitude);
+        
         // Set the map view to the user's location
         mainMap.setView([latitude, longitude], 13);
         
@@ -299,6 +278,7 @@
 
     // Function to handle errors when getting the location
     function showError(error) {
+        console.error("Error getting location: ", error);
         switch (error.code) {
             case error.PERMISSION_DENIED:
                 alert("User denied the request for Geolocation.");
@@ -314,6 +294,11 @@
                 break;
         }
     }
+
+    // Close the popup
+    document.getElementById('close-popup').addEventListener('click', function() {
+        document.getElementById('popup-overlay').style.display = 'none'; // Hide the popup
+    });
 </script>
 </body>
 </html>
