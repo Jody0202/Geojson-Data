@@ -45,6 +45,11 @@
         .legend-item {
             margin-top: 5px;
         }
+        /* CSS for the popup */
+        .leaflet-popup-content {
+            max-height: 300px; /* Limit the height */
+            overflow-y: auto; /* Enable scrolling */
+        }
     </style>
 </head>
 <body>
@@ -195,13 +200,11 @@
 
         // Iterate over each code and check if it's in the dictionary
         codeArray.forEach(code => {
-            // Normalize code for checking (optional)
-            const cleanedCode = code.toUpperCase(); // Normalize to upper case for consistent lookup
-            const meaning = article4CodeMeanings[cleanedCode];
+            const meaning = article4CodeMeanings[code];
             if (meaning) {
-                knownRestrictions.push(`<li>${meaning}</li>`); // Use <li> for bullet points
+                knownRestrictions.push(`<li>${meaning}</li>`); // Use list items for bullet points
             } else {
-                unknownCodes += `Unknown restriction for code ${cleanedCode}<br>`;
+                unknownCodes += `Unknown restriction for code ${code}<br>`;
             }
         });
 
