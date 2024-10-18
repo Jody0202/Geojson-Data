@@ -70,6 +70,7 @@
             cursor: pointer;
             font-weight: bold;
             text-align: right;
+            margin-bottom: 10px; /* Space between close button and content */
         }
     </style>
 </head>
@@ -210,8 +211,7 @@
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
     function getRestrictionsFromCodes(codes) {
-        if (!codes) return 'Article 4 Direction'; // No codes, just a general notice
-
+        if (!codes) return 'Article 4 Direction has no associated restrictions.';
         const codeArray = codes.split(';');
         const descriptions = codeArray.map(code => article4CodeMeanings[code] || `Unknown code: ${code}`);
         return `<h3>Article 4 Direction</h3><ul>${descriptions.map(desc => `<li>${desc}</li>`).join('')}</ul>`;
@@ -220,7 +220,7 @@
     // Show restrictions in a full-screen overlay
     function showRestrictionsInOverlay(restrictions) {
         const overlay = document.getElementById('popup-overlay');
-        const content = document.getElementById('popup-restrictions');
+        const content = document.getElementById('popup-content');
         content.innerHTML = restrictions; // Set the restrictions in the overlay
         overlay.style.display = 'flex'; // Show the overlay
     }
@@ -229,7 +229,6 @@
     document.getElementById('close-popup').addEventListener('click', () => {
         document.getElementById('popup-overlay').style.display = 'none';
     });
-
 </script>
 </body>
 </html>
