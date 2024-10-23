@@ -235,14 +235,23 @@ function checkInRestrictedAreas(lat, lon, marker) {
         }
     });
 
-    // Prepare the output for the marker popup
+    // Prepare the output for the marker popup with line breaks
     if (foundAreas.length > 0) {
-        const areaDescriptions = areaTypes.join(', '); // List all areas
-        marker.bindPopup(`You are located in the following restricted areas: ${areaDescriptions}`).openPopup();
+        const areaDescriptions = areaTypes.join(', ');
+        
+        // Break the sentence into two lines
+        const popupContent = `You are located in the following restricted areas:<br>${areaDescriptions}`;
+        
+        // Bind the popup with the two-line message
+        marker.bindPopup(popupContent, {
+            maxWidth: 300, // Optional: Adjust max width for better readability on mobile
+            closeOnClick: false
+        }).openPopup();
     } else {
         marker.bindPopup(`You are not in a restricted area.`).openPopup();
     }
 }
+
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
     function getRestrictionsFromCodes(codes, notes) { // Add notes parameter
