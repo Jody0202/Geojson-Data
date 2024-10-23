@@ -5,75 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planning Area Restrictions</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        #map {
-            height: 80vh;
-            width: 100%;
-        }
-        #search-container {
-            position: absolute;
-            top: 10px;
-            left: 1.7cm;
-            background-color: white;
-            padding: 10px;
-            z-index: 1000;
-            border-radius: 5px;
-            width: 200px;
-        }
-        .search-input {
-            width: 150px;
-            padding: 5px;
-        }
+<style>
+    /* Ensure the map takes the full width of the screen */
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    #map {
+        height: 80vh;
+        width: 100%;
+    }
+
+    /* Responsive legend container */
+    #legend {
+        background: white;
+        line-height: 1.5;
+        padding: 10px;
+        margin: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        font-size: 12px; /* Ensure smaller font size for mobile */
+    }
+
+    /* Popup overlay and restrictions box */
+    #popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: none; /* Initially hidden */
+        justify-content: center;
+        align-items: center;
+        z-index: 1001; /* Ensure it's above everything else */
+    }
+
+    /* Make popup content responsive for smaller screens */
+    #popup-restrictions {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        width: 90%; /* Use 90% of screen width */
+        max-height: 80vh; /* Limit height for overflow on smaller screens */
+        overflow-y: auto; /* Enable scrolling for longer content */
+        font-size: 12px; /* Smaller font size for mobile devices */
+    }
+
+    /* Close button styling */
+    #close-popup {
+        cursor: pointer;
+        font-weight: bold;
+        text-align: right;
+        margin-bottom: 10px; /* Space between close button and content */
+    }
+
+    /* Adjust search container for mobile */
+    #search-container {
+        position: absolute;
+        top: 10px;
+        left: 1.7cm;
+        background-color: white;
+        padding: 10px;
+        z-index: 1000;
+        border-radius: 5px;
+        width: 200px;
+    }
+
+    .search-input {
+        width: 150px;
+        padding: 5px;
+    }
+
+    /* Responsive design for smaller screens */
+    @media (max-width: 600px) {
         #legend {
-            background: white;
-            line-height: 1.5;
-            padding: 10px;
-            margin: 10px;
-            border-radius: 5px;
-            z-index: 1000;
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            font-size: 12px; /* Set legend font size to match popup */
+            font-size: 10px; /* Even smaller font size on very small screens */
         }
-        .legend-title {
-            font-weight: bold;
-        }
-        .legend-item {
-            margin-top: 5px;
-        }
-        #popup-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: none; /* Initially hidden */
-            justify-content: center;
-            align-items: center;
-            z-index: 1001; /* Ensure it's above everything else */
-        }
+
         #popup-restrictions {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            width: 90%; /* Responsive width */
-            max-height: 80vh; /* Allow scrolling if content exceeds this height */
-            overflow-y: auto; /* Enable vertical scrolling */
-            font-size: 12px; /* Adjust font size for mobile */
+            font-size: 10px; /* Adjust the font size for mobile */
         }
-        #close-popup {
-            cursor: pointer;
-            font-weight: bold;
-            text-align: right;
-            margin-bottom: 10px; /* Space between close button and content */
+
+        /* Make sure the search container fits smaller screens */
+        #search-container {
+            width: 150px;
         }
-    </style>
+
+        .search-input {
+            width: 120px;
+        }
+    }
+</style>
+
 </head>
 <body>
 
