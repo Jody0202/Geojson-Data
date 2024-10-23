@@ -190,44 +190,44 @@
         }
     }
 
-    // Check if a point is inside any restricted area
-    function checkInRestrictedAreas(lat, lon, marker) {
-        const point = turf.point([lon, lat]);
-        let foundAreas = [];
-        let areaTypes = [];
+// Check if a point is inside any restricted area
+function checkInRestrictedAreas(lat, lon, marker) {
+    const point = turf.point([lon, lat]);
+    let foundAreas = [];
+    let areaTypes = [];
 
-        // Check Article 4 area
-        const article4Result = checkInArea(point, article4Data);
-        if (article4Result) {
-            foundAreas.push(article4Result);
-            areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
+    // Check Article 4 area
+    const article4Result = checkInArea(point, article4Data);
+    if (article4Result) {
+        foundAreas.push(article4Result);
+        areaTypes.push('Article 4 Direction'); // Include Article 4 in area types
 
-            // Retrieve the notes information
-            const notes = article4Result.properties['notes'] || ""; // Adjusted to retrieve 'notes'
-            
-            // Get restrictions based on permitted-development-rights
-            const codes = article4Result.properties['permitted-development-rights'];
-            const restrictions = getRestrictionsFromCodes(codes, notes);
-            showRestrictionsInOverlay(restrictions); // Show restrictions in overlay
-        }
+        // Retrieve the notes information
+        const notes = article4Result.properties['notes'] || ""; // Adjusted to retrieve 'notes'
 
-        // Check other layers
-        otherLayersData.forEach(layer => {
-            const result = checkInArea(point, layer.data);
-            if (result) {
-                foundAreas.push(result);
-                areaTypes.push(layer.name); // Include other layer name
-            }
-        });
-
-        // Prepare the output for the marker popup
-        if (foundAreas.length > 0) {
-            const areaDescriptions = areaTypes.join(', ');
-            marker.bindPopup(`You are located in: ${areaDescriptions}`).openPopup();
-        } else {
-            marker.bindPopup(`You are not in a restricted area.`).openPopup();
-        }
+        // Get restrictions based on permitted-development-rights
+        const codes = article4Result.properties['permitted-development-rights'];
+        const restrictions = getRestrictionsFromCodes(codes, notes);
+        showRestrictionsInOverlay(restrictions); // Show restrictions in overlay
     }
+
+    // Check other layers
+    otherLayersData.forEach(layer => {
+        const result = checkInArea(point, layer.data);
+        if (result) {
+            foundAreas.push(result);
+            areaTypes.push(layer.name); // Include other layer name
+        }
+    });
+
+    // Prepare the output for the marker popup
+    if (foundAreas.length > 0) {
+        const areaDescriptions = areaTypes.join(', '); // List all areas
+        marker.bindPopup(`You are located in the following restricted areas: ${areaDescriptions}`).openPopup();
+    } else {
+        marker.bindPopup(`You are not in a restricted area.`).openPopup();
+    }
+}
 
     // Convert the codes in 'permitted-development-rights' into their descriptions
     function getRestrictionsFromCodes(codes, notes) { // Add notes parameter
